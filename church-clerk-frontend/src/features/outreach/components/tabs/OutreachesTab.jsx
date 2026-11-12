@@ -1,5 +1,4 @@
-import { useCallback, useContext, useEffect, useState, useRef } from "react";
-import PermissionContext from "../../../permissions/permission.store.js";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getOutreachEvents, createOutreachEvent, updateOutreachEvent, deleteOutreachEvent,
@@ -298,7 +297,8 @@ function DeleteModal({ open, eventTitle, onCancel, onConfirm, deleting }) {
 }
 
 // ── Event Card ────────────────────────────────────────────────────
-function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
+function EventCard({ event, onEdit, onDelete, onView }) {
+  const guarded = useGuardedAction();
   const metaItems = [];
   metaItems.push({
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
@@ -322,13 +322,11 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
         ]}
         actions={
           <>
-            {canWrite ? (
-              <button onClick={() => onEdit(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              </button>
-            ) : null}
-            {canDelete && event?.canDelete !== false ? (
-              <button onClick={() => onDelete(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+            <button onClick={() => guarded(() => onEdit(event), "outreach", "update")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            {event?.canDelete !== false ? (
+              <button onClick={() => guarded(() => onDelete(event), "outreach", "delete")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ) : null}
@@ -364,10 +362,6 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
 
 // ── Main Tab ──────────────────────────────────────────────────────
 export default function OutreachesTab({ setHeaderAction }) {
-  const { can } = useContext(PermissionContext) || {};
-  const canCreate = typeof can === "function" ? can("outreach", "create") : false;
-  const canUpdate = typeof can === "function" ? can("outreach", "update") : false;
-  const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
   const { toPage } = useDashboardNavigator();
   const guarded = useGuardedAction();
 
@@ -404,15 +398,14 @@ export default function OutreachesTab({ setHeaderAction }) {
 
   useEffect(() => {
     if (!setHeaderAction) return;
-    if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         New Outreach
       </button>
     );
     return () => setHeaderAction(null);
-  }, [canCreate, setHeaderAction]);
+  }, [setHeaderAction]);
 
   const handleFilter = (key, value) => {
     const next = { ...filters, [key]: value };
@@ -515,8 +508,8 @@ export default function OutreachesTab({ setHeaderAction }) {
               illustration={filters.search || filters.status || filters.type ? "search" : "outreach"}
               title={filters.search || filters.status || filters.type ? "No outreaches found" : "No outreaches yet"}
               description={filters.search || filters.status || filters.type ? "We couldn't find any outreaches matching your filters." : "Plan your first outreach to start reaching your community."}
-              actionLabel={filters.search || filters.status || filters.type ? "Clear Filters" : (canCreate ? "New Outreach" : null)}
-              onAction={filters.search || filters.status || filters.type ? () => { setFilters({ search: "", status: "", type: "" }); fetchEvents(1, { search: "", status: "", type: "" }); } : (canCreate ? () => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }) : undefined)}
+              actionLabel={filters.search || filters.status || filters.type ? "Clear Filters" : "New Outreach"}
+              onAction={filters.search || filters.status || filters.type ? () => { setFilters({ search: "", status: "", type: "" }); fetchEvents(1, { search: "", status: "", type: "" }); } : () => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")}
             />
           </div>
         ) : (
@@ -526,11 +519,9 @@ export default function OutreachesTab({ setHeaderAction }) {
                 <EventCard
                   key={event._id}
                   event={event}
-                  onEdit={(e) => guarded(() => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); })}
-                  onDelete={(e) => guarded(() => setDeleteTarget(e))}
+                  onEdit={(e) => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); }}
+                  onDelete={(e) => setDeleteTarget(e)}
                   onView={(e) => toPage("outreach-event-details", { id: e._id })}
-                  canWrite={canUpdate}
-                  canDelete={canDelete}
                 />
               ))}
             </div>

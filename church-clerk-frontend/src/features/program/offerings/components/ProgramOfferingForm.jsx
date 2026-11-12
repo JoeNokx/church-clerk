@@ -4,13 +4,12 @@ import ProgramOfferingContext from "../programOfferings.store.js";
 import AddLookupValueButton from "../../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../../lookups/hooks/useLookupValues.js";
 import Button from "../../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../../shared/context/SubscriptionLockContext.jsx";
 
 const OFFERING_TYPES = [
+  "main offering",
   "first offering",
-  "second offering",
-  "third offering",
-  "fourth offering",
-  "fifth offering"
+  "second offering"
 ];
 
 const SEED_TYPES = [
@@ -20,13 +19,14 @@ const SEED_TYPES = [
 
 function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(ProgramOfferingContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("programs", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("programs", "update") : false), [can]);
 
   const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
-  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
+  const offeringTypeOptions = [...new Set([...(lookupOfferingTypes || []), ...OFFERING_TYPES])];
   const { values: lookupSeedTypes, reload: reloadSeedTypes } = useLookupValues("seedType");
   const seedTypeOptions = [...new Set([...(lookupSeedTypes || []), ...SEED_TYPES])];
 
@@ -108,10 +108,10 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.updateOffering?.(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.createOffering?.(payload);
       }
 
@@ -171,7 +171,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
-                  {canCreate || canEdit ? (
+                  
                     <AddLookupValueButton
                       label="Add type"
                       kind="offeringType"
@@ -180,7 +180,6 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                         setOfferingType(value);
                       }}
                     />
-                  ) : null}
                 </div>
                 <select
                   value={offeringType}
@@ -199,7 +198,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block font-semibold text-gray-500 text-xs">Seed Type</label>
-                  {canCreate || canEdit ? (
+                  
                     <AddLookupValueButton
                       label="Add type"
                       kind="seedType"
@@ -208,7 +207,6 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                         setSeedType(value);
                       }}
                     />
-                  ) : null}
                 </div>
                 <select
                   value={seedType}

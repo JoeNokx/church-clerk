@@ -5,6 +5,7 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { getMembers } from "../../member/services/member.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -38,13 +39,14 @@ const MAX_DESCRIPTION_LENGTH = 500;
 
 function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(SpecialFundContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("specialFunds", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("specialFunds", "update") : false), [can]);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("specialFundCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])];
 
   const [giverName, setGiverName] = useState("");
   const [category, setCategory] = useState("");
@@ -174,10 +176,16 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) { setIsSubmitting(false); return; }
+        if (!canEdit) {
+          setIsSubmitting(false); showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         await store?.updateSpecialFund(initialData?._id, payload);
       } else {
-        if (!canCreate) { setIsSubmitting(false); return; }
+        if (!canCreate) {
+          setIsSubmitting(false); showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         await store?.createSpecialFund(payload);
       }
 
@@ -289,7 +297,7 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Category</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add category"
                     kind="specialFundCategory"
@@ -298,7 +306,6 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
                       setCategory(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={category}

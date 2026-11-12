@@ -124,9 +124,9 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
       ? "Record your first disbursement to start tracking welfare support to members."
       : "We couldn't find any welfare disbursements matching your current search or filters.";
 
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
     const actionLabel = showAdd ? "Add Disbursement" : recovery?.actionLabel;
-    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate, "welfare", "create") : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -174,7 +174,7 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }) }
+                    { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }, "welfare", "update") }
                   ]} />
                 </td>
               </tr>

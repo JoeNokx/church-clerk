@@ -36,6 +36,7 @@ import {
   Bar,
   Legend
 } from "recharts";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -294,6 +295,7 @@ function FinancialStatementContent() {
   const { toPage } = useDashboardNavigator();
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
+  const guarded = useGuardedAction();
   const canExport = useMemo(() => (typeof can === "function" ? can("financialStatement", "export") : false), [can]);
 
   const now = useMemo(() => new Date(), []);
@@ -513,10 +515,9 @@ function FinancialStatementContent() {
                 ]}
               >
                 <YearInput value={monthYear} onChange={setMonthYear} />
-                {canExport ? (
-                  <button
+                {(<button
                     type="button"
-                    onClick={() => { setExportError(""); setExportOpen(true); }}
+                    onClick={() => guarded(() => { setExportError(""); setExportOpen(true); }, "financialStatement", "export")}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -525,8 +526,7 @@ function FinancialStatementContent() {
                       <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                     Export
-                  </button>
-                ) : null}
+                  </button>)}
               </FilterBar>
             ) : tab === "quarterly" ? (
               <FilterBar
@@ -547,10 +547,9 @@ function FinancialStatementContent() {
                 ]}
               >
                 <YearInput value={quarterYear} onChange={setQuarterYear} />
-                {canExport ? (
-                  <button
+                {(<button
                     type="button"
-                    onClick={() => { setExportError(""); setExportOpen(true); }}
+                    onClick={() => guarded(() => { setExportError(""); setExportOpen(true); }, "financialStatement", "export")}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -559,16 +558,14 @@ function FinancialStatementContent() {
                       <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                     Export
-                  </button>
-                ) : null}
+                  </button>)}
               </FilterBar>
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <YearInput value={annualYear} onChange={setAnnualYear} />
-                {canExport ? (
-                  <button
+                {(<button
                     type="button"
-                    onClick={() => { setExportError(""); setExportOpen(true); }}
+                    onClick={() => guarded(() => { setExportError(""); setExportOpen(true); }, "financialStatement", "export")}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -577,8 +574,7 @@ function FinancialStatementContent() {
                       <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                     Export
-                  </button>
-                ) : null}
+                  </button>)}
               </div>
             )}
           </div>
@@ -615,10 +611,9 @@ function FinancialStatementContent() {
             ) : (
               <YearInput value={annualYear} onChange={setAnnualYear} />
             )}
-            {canExport ? (
-              <button
+            {(<button
                 type="button"
-                onClick={() => { setExportError(""); setExportOpen(true); }}
+                onClick={() => guarded(() => { setExportError(""); setExportOpen(true); }, "financialStatement", "export")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -627,8 +622,7 @@ function FinancialStatementContent() {
                   <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
                 Export
-              </button>
-            ) : null}
+              </button>)}
           </div>
         </div>
 
@@ -1179,6 +1173,7 @@ function FinancialAnalyticsContent() {
 
 function FinancialStatementPage() {
   const { can } = useContext(PermissionContext) || {};
+  const guarded = useGuardedAction();
   const canReadStatement = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
   const canReadAnalytics = useMemo(() => (typeof can === "function" ? can("reportsAnalytics", "read") : true), [can]);
   const canUpdateOpeningBalance = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
@@ -1216,12 +1211,12 @@ function FinancialStatementPage() {
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Financial Overview</h2>
           <p className="mt-2 text-gray-600 text-sm hidden md:block">Statement and analytics for your church finances</p>
         </div>
-        {overviewTab === "openingBalance" && canUpdateOpeningBalance ? (
+        {overviewTab === "openingBalance" ? (
           <Button
             type="button"
             variant="primary"
             className="shrink-0 rounded-lg px-4 py-2 text-sm"
-            onClick={() => setObFormOpen(true)}
+            onClick={() => guarded(() => setObFormOpen(true), "offerings", "update")}
           >
             Add Open Balance
           </Button>

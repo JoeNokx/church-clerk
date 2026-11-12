@@ -1,5 +1,6 @@
 import Offering from "../../models/organisationModel/groupOfferingModel.js";
 import Group from "../../models/organisationModel/groupModel.js";    
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 const createGroupOffering = async (req, res) => {
   try {
@@ -15,7 +16,7 @@ const createGroupOffering = async (req, res) => {
 
       // 1. Validate group exists and belongs to this church
     const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -58,7 +59,7 @@ const getAllGroupOfferings = async(req, res) => {
     const { groupId } = req.params;
   const query = { group: groupId };
   
-    if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if(!isSystemViewer(req)) {
         query.church = req.activeChurch._id
     }
 
@@ -148,7 +149,7 @@ const updateGroupOffering = async(req, res) => {
 
     const query = {_id: offeringId, group: groupId}
 
-    if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if(!isSystemViewer(req)) {
         query.church = req.activeChurch._id
     }
 
@@ -183,7 +184,7 @@ const deleteGroupOffering = async(req, res) => {
 
 const query = { _id: offeringId, group: groupId };
 
-      if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      if(!isSystemViewer(req)) {
           query.church = req.activeChurch._id  
       }
 

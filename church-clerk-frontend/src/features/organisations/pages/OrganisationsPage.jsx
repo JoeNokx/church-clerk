@@ -119,6 +119,7 @@ function formatTimeWithAmPm(timeStr) {
 }
 
 function MinistryCard({ row, type, canView, canEdit, canDelete, onView, onEdit, onDelete }) {
+  const guarded = useGuardedAction();
   const meetings = normalizeMeetingSchedule(row);
   const totalMembers = row?.totalMembers ?? 0;
 
@@ -139,13 +140,11 @@ function MinistryCard({ row, type, canView, canEdit, canDelete, onView, onEdit, 
         badgeClass={badgeClass}
         actions={
           <>
-            {canEdit ? (
-              <button onClick={onEdit} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            {(<button onClick={() => guarded(onEdit, "organisation", "update")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              </button>
-            ) : null}
-            {canDelete && row?.canDelete !== false ? (
-              <button onClick={onDelete} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              </button>)}
+            {row?.canDelete !== false ? (
+              <button onClick={() => guarded(onDelete, "organisation", "delete")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ) : null}
@@ -507,7 +506,7 @@ function OrganisationsPage() {
   const guarded = useGuardedAction();
 
   const { can } = useContext(PermissionContext) || {};
-  const canView = useMemo(() => (typeof can === "function" ? can("organisation", "view") : false), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? can("organisation", "read") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("organisation", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("organisation", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("organisation", "delete") : false), [can]);
@@ -725,16 +724,14 @@ function OrganisationsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {canCreate ? (
-            <button
+          {(<button
               type="button"
-              onClick={() => guarded(openCreate)}
+              onClick={() => guarded(openCreate, "organisation", "create")}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               <span className="leading-none text-lg">+</span>
               Add {activeTab === "groups" ? "Group" : activeTab === "cells" ? "Cell" : activeTab === "ministries" ? "Ministry" : "Department"}
-            </button>
-          ) : null}
+            </button>)}
         </div>
       </div>
 
@@ -811,8 +808,8 @@ function OrganisationsPage() {
                 description={isZero
                   ? `Create your first ${String(tabLabel).slice(0, -1)} to start organizing your church.`
                   : "We couldn't find any matching your search."}
-                actionLabel={isZero && canCreate ? "Add" : (isZero ? null : "Clear Search")}
-                onAction={isZero && canCreate ? () => guarded(openCreate) : (isZero ? undefined : () => setSearch(""))}
+                actionLabel={isZero ? "Add" : "Clear Search"}
+                onAction={isZero ? () => guarded(openCreate, "organisation", "create") : () => setSearch("")}
               />
             );
           })()

@@ -1,6 +1,5 @@
 import { useContext, useMemo, useState } from "react";
 
-import PermissionContext from "../../permissions/permission.store.js";
 import MemberCareContext from "../memberCare.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
@@ -13,13 +12,9 @@ import Chip from "./Chip.jsx";
 import { formatDate, labelFor, memberName, PRAYER_CATEGORIES, PRAYER_STATUSES } from "../constants.js";
 
 function PrayerRequestTable({ onEdit, onCreate }) {
-  const { can } = useContext(PermissionContext) || {};
   const store = useContext(MemberCareContext);
   const guarded = useGuardedAction();
 
-  const canEdit = useMemo(() => (typeof can === "function" ? can("memberCare", "update") : false), [can]);
-  const canCreate = useMemo(() => (typeof can === "function" ? can("memberCare", "create") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("memberCare", "delete") : false), [can]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -106,7 +101,7 @@ function PrayerRequestTable({ onEdit, onCreate }) {
       onClearFilters: clearFilters,
     });
     const isZero = reason === "zero";
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
 
     return (
       <EmptyState
@@ -116,7 +111,7 @@ function PrayerRequestTable({ onEdit, onCreate }) {
           ? "Record the first prayer request to start tracking the church's prayer list."
           : "We couldn't find any prayer requests matching your current search or filters."}
         actionLabel={showAdd ? "New Prayer Request" : recovery?.actionLabel}
-        onAction={showAdd ? () => guarded(onCreate) : recovery?.onAction}
+        onAction={showAdd ? () => guarded(onCreate, "memberCare", "create") : recovery?.onAction}
         secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
         onSecondary={showAdd ? null : recovery?.onSecondary}
       />
@@ -168,9 +163,9 @@ function PrayerRequestTable({ onEdit, onCreate }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => setViewRow(row) },
-                      canEdit && row?.status !== "answered" && { label: "Mark Answered", onClick: () => guarded(() => markAnswered(row)) },
-                      canEdit && { label: "Edit", onClick: () => guarded(() => onEdit?.(row)) },
-                      canDelete && { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row)) },
+                      row?.status !== "answered" && { label: "Mark Answered", onClick: () => guarded(() => markAnswered(row), "memberCare", "update") },
+                      { label: "Edit", onClick: () => guarded(() => onEdit?.(row), "memberCare", "update") },
+                      { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row), "memberCare", "delete") },
                     ]} />
                   </td>
                 </tr>

@@ -4,6 +4,7 @@ import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque", "Card"];
 
@@ -27,6 +28,7 @@ function memberLabel(member) {
 
 function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(TitheContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
@@ -171,9 +173,10 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
 
     if (mode === "edit") {
       if (!canEdit) {
-        setIsSubmitting(false);
-        return;
-      }
+          setIsSubmitting(false);
+        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
 
       if (!date) {
         setFormError("Date is required.");
@@ -214,9 +217,10 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     }
 
     if (!canCreate) {
-      setIsSubmitting(false);
-      return;
-    }
+          setIsSubmitting(false);
+      showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
 
     if (pendingEntries.length) {
       const hasAnyCurrentInput = Boolean(selectedMemberId || String(amount || "").trim() || date);

@@ -29,11 +29,9 @@ import {
 const router = express.Router();
 
 const churchDashboardRoles = [
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader",
+  "churchclerkadmin",
+  
+  
   "superadmin",
   "supportadmin"
 ];
@@ -49,7 +47,7 @@ router.post(
   "/subscriptions",
   protect, 
   attachPermissions,
-  authorizeRoles("churchadmin"),
+  authorizeRoles("churchclerkadmin"),
   requirePermission("billing", "create"),
   chooseSubscription
 );
@@ -61,7 +59,7 @@ router.post(
   "/subscriptions/upgrade",
   protect,
   attachPermissions,
-  authorizeRoles("churchadmin"),
+  authorizeRoles("churchclerkadmin"),
   requirePermission("billing", "create"),
   upgradeTrialToPlan
 );

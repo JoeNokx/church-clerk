@@ -12,12 +12,7 @@ const authorizeRoles = (...roles) => {
       return next();
     }
 
-    let userRole = normalizeRole(req.user?.role);
-
-    const clientApp = String(req.headers?.["x-client-app"] || "").trim().toLowerCase();
-    if (clientApp === "system-admin" && userRole === "supportadmin") {
-      userRole = "superadmin";
-    }
+    const userRole = normalizeRole(req.user?.role);
     if (!allowed.includes(userRole)) {
       return res.status(403).json({ message: "You do not have permission to perform this action" });
     }
@@ -25,6 +20,21 @@ const authorizeRoles = (...roles) => {
   };
 };
 
+// Hard role check — unlike authorizeRoles this is NOT bypassed when
+// req.permissions is attached. Use it for actions restricted to a specific
+// role regardless of any custom-permission matrix (e.g. role management is
+// reserved for the ChurchClerk admin).
+export const requireUserRole = (...roles) => {
+  const allowed = roles.map(normalizeRole);
+  return (req, res, next) => {
+    const userRole = normalizeRole(req.user?.role);
+    if (!allowed.includes(userRole)) {
+      return res.status(403).json({ message: "You do not have permission to perform this action" });
+    }
+    next();
+  };
+};
 
+export { normalizeRole };
 
 export default authorizeRoles

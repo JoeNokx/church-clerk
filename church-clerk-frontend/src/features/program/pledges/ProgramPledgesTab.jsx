@@ -136,16 +136,14 @@ function ProgramPledgesTab({ programId, programTitle }) {
           dateTo={dateTo}
           onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setPage(1); }}
         >
-          {canWrite && canCreate ? (
-            <button
-              type="button"
-              onClick={() => guarded(() => setCreateOpen(true))}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Pledge
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => guarded(() => setCreateOpen(true), "pledges", "create")}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+          >
+            <span className="leading-none text-lg">+</span>
+            Add Pledge
+          </button>
         </FilterBar>
         <MobileFilterBar
           searchValue={search}
@@ -240,8 +238,8 @@ function ProgramPledgesTab({ programId, programTitle }) {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => setPledgeModal({ id: row._id, view: "details" }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                            canWrite && { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                            canWrite && { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                            { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                            { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                           ]} />
                         </td>
                       </tr>

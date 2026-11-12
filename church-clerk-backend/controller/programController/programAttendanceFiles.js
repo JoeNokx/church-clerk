@@ -1,6 +1,7 @@
 import Program from "../../models/programModel.js";
 import ProgramAttendanceFile from "../../models/programModel/programAttendanceFileModel.js";
 import cloudinary from "../../config/cloudinary.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 function resolveResourceType(mimeType) {
   const mt = String(mimeType || "").toLowerCase();
@@ -13,7 +14,7 @@ async function getScopedProgram(req) {
   const { programId } = req.params;
   const query = { _id: programId };
 
-  if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+  if (!isSystemViewer(req)) {
     query.church = req.activeChurch._id;
   }
 

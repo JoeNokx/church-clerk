@@ -230,7 +230,7 @@ function FundraisingPageInner() {
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
   const { can } = useContext(PermissionContext) || {};
-  const canView = useMemo(() => (typeof can === "function" ? (can("churchProjects", "view") || can("pledges", "view")) : false), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? (can("churchProjects", "read") || can("pledges", "read")) : false), [can]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -332,16 +332,14 @@ function FundraisingPageInner() {
         </div>
 
         <div className="flex items-center gap-3">
-          {canEdit ? (
-            <button
+          {(<button
               type="button"
               onClick={() => guarded(() => setAddProjectOpen(true))}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
               New Fundraising
-            </button>
-          ) : null}
+            </button>)}
         </div>
       </div>
 
@@ -505,11 +503,9 @@ function FundraisingPageInner() {
                   badgeClass={badge.cls}
                   actions={
                     <>
-                      {canEdit ? (
-                        <button onClick={() => guarded(() => openEdit(p))} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                      {(<button onClick={() => guarded(() => openEdit(p))} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
                           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                        </button>
-                      ) : null}
+                        </button>)}
                     </>
                   }
                 />
@@ -745,7 +741,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData }) {
 function FundraisingPage() {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function"
-    ? (can("churchProjects", "view") || can("pledges", "view"))
+    ? (can("churchProjects", "read") || can("pledges", "read"))
     : false), [can]);
 
   if (!canRead) {

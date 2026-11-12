@@ -20,6 +20,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
+import { useAuth } from "../../Auth/useAuth.js";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -29,6 +30,7 @@ const fmtDate = (v) => {
 };
 
 function BillingSubscriptionsPage() {
+  const { guardPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -261,7 +263,7 @@ function BillingSubscriptionsPage() {
         actions={
           <button
             type="button"
-            onClick={() => { setConfirmGlobalCycle(true); setConfirmText(""); }}
+            onClick={() => guardPermission("systemBilling", "runCycle", () => { setConfirmGlobalCycle(true); setConfirmText(""); })}
             disabled={globalCycleLoading}
             title="Runs billing cycle for ALL churches with overdue nextBillingDate — same as the nightly scheduled job"
             className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
@@ -382,41 +384,41 @@ function BillingSubscriptionsPage() {
                       <TableKebabMenu items={[
                         s?.status !== "active" && !isSuspended && {
                           label: "Activate",
-                          onClick: () => onQuickAction(s, "activate"),
+                          onClick: () => guardPermission("systemBilling", "update", () => onQuickAction(s, "activate")),
                           disabled: !!actionLoading,
                           desktopClassName: "rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50",
                           desktopContent: "Activate",
                         },
                         !isSuspended ? {
                           label: "Suspend",
-                          onClick: () => onQuickAction(s, "suspend"),
+                          onClick: () => guardPermission("systemBilling", "update", () => onQuickAction(s, "suspend")),
                           disabled: !!actionLoading,
                           desktopClassName: "rounded-md border border-orange-200 bg-white px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50",
                           desktopContent: "Suspend",
                         } : {
                           label: "Resume",
-                          onClick: () => onQuickAction(s, "resume"),
+                          onClick: () => guardPermission("systemBilling", "update", () => onQuickAction(s, "resume")),
                           disabled: !!actionLoading,
                           desktopClassName: "rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50",
                           desktopContent: "Resume",
                         },
                         {
                           label: "Run Cycle",
-                          onClick: () => { setConfirmCycleChurch(s); setConfirmText(""); },
+                          onClick: () => guardPermission("systemBilling", "runCycle", () => { setConfirmCycleChurch(s); setConfirmText(""); }),
                           disabled: !!actionLoading || cycleLoadingId === String(s?.church?._id),
                           desktopClassName: "rounded-md border border-indigo-200 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50",
                           desktopContent: cycleLoadingId === String(s?.church?._id) ? "Running…" : "▶ Run Cycle",
                         },
                         {
                           label: "Change Plan",
-                          onClick: () => onQuickAction(s, "changePlan"),
+                          onClick: () => guardPermission("systemBilling", "update", () => onQuickAction(s, "changePlan")),
                           disabled: !!actionLoading,
                           desktopClassName: "rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50",
                           desktopContent: "Change Plan",
                         },
                         {
                           label: "Delete",
-                          onClick: () => { setConfirmDelete(s); setDeleteText(""); },
+                          onClick: () => guardPermission("systemBilling", "delete", () => { setConfirmDelete(s); setDeleteText(""); }),
                           disabled: !!actionLoading,
                           danger: true,
                           desktopClassName: "rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50",

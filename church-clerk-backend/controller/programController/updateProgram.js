@@ -1,4 +1,5 @@
 import Program from "../../models/programModel.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 // UPDATE
 const updateProgram = async (req, res) => {
@@ -6,7 +7,7 @@ const updateProgram = async (req, res) => {
     const { id } = req.params;
     const query = { _id: id };
 
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

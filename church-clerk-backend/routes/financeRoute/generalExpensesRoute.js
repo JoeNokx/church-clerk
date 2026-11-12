@@ -21,7 +21,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("expenses", "read"),
   getAllGeneralExpenses
 );
@@ -33,7 +33,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("expenses", "create"),
   uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
@@ -46,7 +46,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("expenses", "update"),
   uploadReceiptFile,
   conditionalImmutableGuard(),
@@ -59,7 +59,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("expenses", "read"),
   downloadGeneralExpenseReceipt
 );
@@ -70,7 +70,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("expenses", "read"),
   getGeneralExpensesKPI
 );
@@ -82,7 +82,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("expenses", "update"),
   async (req, res) => {
     try {
@@ -97,6 +97,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "expenses",
         entityType: "generalExpense",

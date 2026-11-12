@@ -19,7 +19,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("offerings", "create"),
   validateRequest(createOfferingSchema),
   backdatingGuard({ dateField: "serviceDate", module: "offerings", entityType: "offering" }),
@@ -31,7 +31,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("offerings", "read"),
   getAllOfferings
 );
@@ -41,7 +41,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("offerings", "update"),
   conditionalImmutableGuard(),
   updateOffering
@@ -52,7 +52,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("offerings", "read"),
   getOfferingKPI
 );
@@ -63,7 +63,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("offerings", "update"),
   async (req, res) => {
     try {
@@ -78,6 +78,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "offerings",
         entityType: "offering",

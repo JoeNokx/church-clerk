@@ -24,6 +24,28 @@ export const canCreateChurchUser = async () => {
   return await http.get("/user/church-users/can-create");
 };
 
+// Church custom roles (same logic as the system admin custom roles, but
+// church-scoped and managed by the ChurchClerk admin only)
+export const listChurchCustomRoles = async () => {
+  return await http.get("/user/custom-roles");
+};
+
+export const createChurchCustomRole = async (payload) => {
+  return await http.post("/user/custom-roles", payload);
+};
+
+export const getChurchCustomRole = async (id) => {
+  return await http.get(`/user/custom-roles/${id}`);
+};
+
+export const updateChurchCustomRole = async (id, payload) => {
+  return await http.patch(`/user/custom-roles/${id}`, payload);
+};
+
+export const deleteChurchCustomRole = async (id) => {
+  return await http.delete(`/user/custom-roles/${id}`);
+};
+
 // Financial governance flags
 export const getGovernanceFlagsSnapshot = async () => {
   return await http.get("/system-admin/governance/flags/snapshot");

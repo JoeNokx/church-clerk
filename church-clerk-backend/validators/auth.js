@@ -1,5 +1,4 @@
 import Joi from "joi";
-import { SYSTEM_ROLES } from "../config/roles.js";
 
 const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/);
 
@@ -55,8 +54,7 @@ export const adminRegisterSchema = Joi.object({
   email: Joi.string().trim().email().required(),
   phoneNumber: Joi.string().trim().min(6).max(32).required(),
   password: Joi.string().min(8).max(128).required(),
-  role: Joi.string()
-    .trim()
-    .valid(...SYSTEM_ROLES)
-    .required()
+  // Free-form: validated against the built-in + DB-backed system roles in
+  // the controller, so custom system roles work without schema changes.
+  role: Joi.string().trim().min(1).max(120).required()
 });

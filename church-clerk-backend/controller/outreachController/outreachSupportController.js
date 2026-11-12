@@ -3,8 +3,9 @@ import OutreachEvent from "../../models/outreachModel/outreachEventModel.js";
 import Member from "../../models/memberModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import { generateReferenceId } from "../../utils/generateReferenceId.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
-const isPrivileged = (req) => req.user.role === "superadmin" || req.user.role === "supportadmin";
+const isPrivileged = (req) => isSystemViewer(req);
 
 const resolveEvent = async (req) => {
   const query = { _id: req.params.eventId };

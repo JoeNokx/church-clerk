@@ -43,9 +43,9 @@ import {
   createPrayerRequestSchema
 } from "../validators/memberCare.js";
 
-const readRoles = ["superadmin", "supportadmin", "churchadmin", "secretary", "leader", "admin", "associateadmin"];
-const writeRoles = ["superadmin", "churchadmin", "secretary", "leader", "admin", "associateadmin"];
-const deleteRoles = ["superadmin", "churchadmin", "admin", "associateadmin"];
+const readRoles = ["superadmin", "supportadmin", "churchclerkadmin"];
+const writeRoles = ["superadmin", "churchclerkadmin"];
+const deleteRoles = ["superadmin", "churchclerkadmin"];
 
 const bm = [protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner];
 const R = [...bm, authorizeRoles(...readRoles), requirePermission("memberCare", "read")];

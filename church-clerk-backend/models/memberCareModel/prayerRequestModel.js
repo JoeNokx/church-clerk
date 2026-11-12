@@ -23,7 +23,7 @@ const prayerRequestSchema = new mongoose.Schema(
     },
 
     // Private requests follow the same visibility rule as confidential
-    // care cases — churchadmin (and superadmin) only.
+    // care cases — churchclerkadmin (and superadmin) only.
     isPrivate: { type: Boolean, default: false },
 
     answeredDate: { type: Date },

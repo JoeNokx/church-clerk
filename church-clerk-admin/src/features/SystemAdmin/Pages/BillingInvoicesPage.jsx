@@ -7,6 +7,7 @@ import {
   adminMarkInvoiceStatus
 } from "../Services/adminBilling.api.js";
 import { adminGetSubscriptions } from "../Services/adminBilling.api.js";
+import { useAuth } from "../../Auth/useAuth.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
@@ -19,6 +20,7 @@ const fmtDate = (v) => {
 };
 
 function BillingInvoicesPage() {
+  const { guardPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -136,7 +138,7 @@ function BillingInvoicesPage() {
           <div className="text-lg font-semibold text-gray-900">Invoices</div>
           <div className="mt-1 text-sm text-gray-500">Generate and manage invoices for church subscriptions.</div>
         </div>
-        <button type="button" onClick={openCreate}
+        <button type="button" onClick={() => guardPermission("systemBilling", "create", openCreate)}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
           Generate Invoice
         </button>
@@ -267,7 +269,7 @@ function BillingInvoicesPage() {
                       </a>
                       <button
                         type="button"
-                        onClick={() => onMark(i?._id, i?.status === "paid" ? "unpaid" : "paid")}
+                        onClick={() => guardPermission("systemBilling", "update", () => onMark(i?._id, i?.status === "paid" ? "unpaid" : "paid"))}
                         className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                       >
                         Mark {i?.status === "paid" ? "Unpaid" : "Paid"}
@@ -346,7 +348,7 @@ function BillingInvoicesPage() {
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
               Cancel
             </button>
-            <button type="button" onClick={submitCreate} disabled={createLoading}
+            <button type="button" onClick={() => guardPermission("systemBilling", "create", submitCreate)} disabled={createLoading}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
               {createLoading ? "Creating…" : "Generate"}
             </button>

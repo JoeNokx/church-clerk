@@ -38,7 +38,7 @@ const careCaseSchema = new mongoose.Schema(
       default: "self-reported"
     },
 
-    // Confidential cases are only visible to churchadmin (and superadmin).
+    // Confidential cases are only visible to churchclerkadmin (and superadmin).
     confidential: { type: Boolean, default: false },
 
     description: { type: String, trim: true },

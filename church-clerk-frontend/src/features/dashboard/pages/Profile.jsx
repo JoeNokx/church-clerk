@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getMyProfile } from "../../auth/services/auth.api.js";
+import { roleLabel } from "../../../config/roles.js";
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -58,7 +59,7 @@ function Profile() {
       </div>
 
       <div className="mb-2">
-        <span className="font-semibold">Role:</span> {user.role}
+        <span className="font-semibold">Role:</span> {roleLabel(user.role)}
       </div>
 
       <div className="mb-2">

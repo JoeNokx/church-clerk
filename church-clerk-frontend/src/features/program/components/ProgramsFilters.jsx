@@ -7,8 +7,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 
 const CATEGORY_OPTIONS = [
   "Conference",
-  "Service",
-  "Worship",
+  "Worship & Praises",
   "Prayers",
   "Outreach",
   "Bible Study",
@@ -22,7 +21,10 @@ function ProgramsFilters({ activeStatus }) {
   const store = useContext(ProgramContext);
 
   const { values: lookupCategories } = useLookupValues("eventCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = useMemo(
+    () => [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])],
+    [lookupCategories]
+  );
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 

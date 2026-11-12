@@ -580,17 +580,15 @@ function ReportsAnalyticsPage() {
               />
               <Card.Body>{m.description}</Card.Body>
               <Card.Footer>
-                {canGenerate ? (
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={() => guarded(() => setGenModule(m))}
+                    onClick={() => guarded(() => setGenModule(m), "reportsAnalytics", "generate")}
                     className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-xs"
                   >
                     Generate Report
                   </button>
                 </div>
-                ) : null}
               </Card.Footer>
             </Card>
           ))}
@@ -693,17 +691,15 @@ function ReportsAnalyticsPage() {
                           >
                             <EyeIcon />
                           </button>
-                          {canExport ? (
-                            <RowDownloadMenu
+                          {(<RowDownloadMenu
                               row={row}
                               downloading={
                                 downloadingKey === `${row?._id}:pdf` ? "pdf"
                                   : downloadingKey === `${row?._id}:excel` ? "excel"
                                     : ""
                               }
-                              onDownload={downloadSaved}
-                            />
-                          ) : null}
+                              onDownload={() => guarded(downloadSaved, "reportsAnalytics", "export")}
+                            />)}
                           <button
                             type="button"
                             title="Share"
@@ -713,17 +709,15 @@ function ReportsAnalyticsPage() {
                           >
                             {downloadingKey === `${row?._id}:share` ? "…" : <ShareIcon />}
                           </button>
-                          {canGenerate ? (
-                            <button
-                              type="button"
-                              title="Delete"
-                              disabled={deletingId === row?._id}
-                              onClick={() => guarded(() => setConfirmDelete(row))}
-                              className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50"
-                            >
-                              <TrashIcon />
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            title="Delete"
+                            disabled={deletingId === row?._id}
+                            onClick={() => guarded(() => setConfirmDelete(row), "reportsAnalytics", "generate")}
+                            className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <TrashIcon />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -815,12 +809,11 @@ function ReportsAnalyticsPage() {
             </div>
 
             <div className="shrink-0 border-t border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex flex-wrap items-center justify-end gap-2">
-              {canExport ? (
-                <>
+              {(<>
                   <button
                     type="button"
                     disabled={downloadingKey === `${previewDoc?._id}:pdf`}
-                    onClick={() => downloadSaved(previewDoc, "pdf")}
+                    onClick={() => guarded(() => downloadSaved(previewDoc, "pdf"), "reportsAnalytics", "export")}
                     className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                   >
                     {downloadingKey === `${previewDoc?._id}:pdf` ? "Downloading…" : "Download PDF"}
@@ -828,13 +821,12 @@ function ReportsAnalyticsPage() {
                   <button
                     type="button"
                     disabled={downloadingKey === `${previewDoc?._id}:excel`}
-                    onClick={() => downloadSaved(previewDoc, "excel")}
+                    onClick={() => guarded(() => downloadSaved(previewDoc, "excel"), "reportsAnalytics", "export")}
                     className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                   >
                     {downloadingKey === `${previewDoc?._id}:excel` ? "Downloading…" : "Download Excel"}
                   </button>
-                </>
-              ) : null}
+                </>)}
               <button
                 type="button"
                 disabled={downloadingKey === `${previewDoc?._id}:share`}

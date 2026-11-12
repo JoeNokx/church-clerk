@@ -7,6 +7,7 @@ import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
 import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
 import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -15,7 +16,6 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -25,13 +25,14 @@ const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
 
 function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(ExpensesContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("expenses", "update") : false), [can]);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])];
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -116,12 +117,14 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
       if (mode === "edit") {
         if (!canEdit) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.updateGeneralExpenses?.(initialData?._id, payload);
       } else {
         if (!canCreate) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.createGeneralExpenses?.(payload);
@@ -175,7 +178,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Category</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add category"
                     kind="expenseCategory"
@@ -184,7 +187,6 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
                       setCategory(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={category}

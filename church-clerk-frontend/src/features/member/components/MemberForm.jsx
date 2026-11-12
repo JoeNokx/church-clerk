@@ -4,6 +4,7 @@ import MemberContext from "../member.store.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -28,6 +29,7 @@ const AGE_GROUP_OPTIONS = [
 
 function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(MemberContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
@@ -129,10 +131,18 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) { setIsSubmitting(false); return; }
+        if (!canEdit) {
+          setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         await store?.updateMember(initialData?._id, payload);
       } else {
-        if (!canCreate) { setIsSubmitting(false); return; }
+        if (!canCreate) {
+          setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         await store?.createMember(payload);
       }
 

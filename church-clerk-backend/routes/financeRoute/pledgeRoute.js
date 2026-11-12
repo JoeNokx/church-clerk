@@ -20,7 +20,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "create"),
   backdatingGuard({ dateField: "pledgeDate", module: "pledges", entityType: "pledge" }),
   createPledge
@@ -31,7 +31,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "read"),
   getAllPledge
 );
@@ -41,7 +41,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "read"),
   getPledgesKPI
 );
@@ -51,8 +51,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("pledges", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("pledges", "read"),
   getSinglePledge
 ); 
 router.put(
@@ -61,7 +61,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "update"),
   conditionalImmutableGuard(),
   updatePledge
@@ -73,7 +73,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("pledges", "update"),
   async (req, res) => {
     try {
@@ -88,6 +88,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "pledges",
         entityType: "pledge",
@@ -113,7 +115,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "create"),
   backdatingGuard({ dateField: "paymentDate", module: "pledges", entityType: "pledgePayment" }),
   createPledgePayment
@@ -124,8 +126,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("pledges", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("pledges", "read"),
   getAllPledgePayments
 );
 router.put(
@@ -134,7 +136,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("pledges", "update"),
   conditionalImmutableGuard(),
   updatePledgePayment
@@ -146,7 +148,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("pledges", "update"),
   async (req, res) => {
     try {
@@ -161,6 +163,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "pledges",
         entityType: "pledgePayment",

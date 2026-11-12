@@ -10,7 +10,12 @@ export const attachPermissions = async (req, res, next) => {
     const scope = clientApp === "system-admin" || req.isDelegate ? "system" : "church";
 
     req.permissions = req.user?.role
-      ? await resolvePermissions(req.user.role, req.user?.roleRef, scope)
+      ? await resolvePermissions(
+          req.user.role,
+          req.user?.roleRef,
+          scope,
+          scope === "church" ? req.activeChurch?._id : null
+        )
       : {};
 
     // Delegated sessions: the system admin is viewing as a specific church.
@@ -19,7 +24,7 @@ export const attachPermissions = async (req, res, next) => {
     // every controller's `if (req.user.role !== "superadmin")` church-scoping
     // check naturally applies and scopes queries to req.activeChurch._id.
     if (req.isDelegate && req.user?.role) {
-      req.user.role = "churchadmin";
+      req.user.role = "churchclerkadmin";
     }
   } catch (e) {
     req.permissions = {};

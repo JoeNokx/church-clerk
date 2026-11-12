@@ -19,7 +19,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("specialFunds", "create"),
   validateRequest(createSpecialFundSchema),
   backdatingGuard({ dateField: "givingDate", module: "special_funds", entityType: "specialFund" }),
@@ -31,7 +31,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("specialFunds", "read"),
   getAllSpecialFunds
 );
@@ -41,7 +41,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("specialFunds", "update"),
   conditionalImmutableGuard(),
   updateSpecialFund
@@ -52,7 +52,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("specialFunds", "read"),
   getSpecialFundKPI
 );
@@ -63,7 +63,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("specialFunds", "update"),
   async (req, res) => {
     try {
@@ -78,6 +78,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "special_funds",
         entityType: "specialFund",

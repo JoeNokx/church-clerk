@@ -348,6 +348,7 @@ const TYPE_LABELS = {
 };
 
 function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
+  const guarded = useGuardedAction();
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={subjectName(fu)}>
@@ -367,8 +368,8 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },
-          canWrite && { label: "Edit", onClick: () => onEdit(fu) },
-          canDelete && fu.canDelete !== false && { label: "Delete", onClick: () => onDelete(fu), danger: true },
+          { label: "Edit", onClick: () => guarded(() => onEdit(fu), "outreach", "update") },
+          fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(fu), "outreach", "delete"), danger: true },
         ]} />
       </td>
     </tr>
@@ -379,7 +380,6 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
 export default function FollowUpsTab({ setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
   const guarded = useGuardedAction();
-  const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
 
@@ -429,15 +429,14 @@ export default function FollowUpsTab({ setHeaderAction }) {
 
   useEffect(() => {
     if (!setHeaderAction) return;
-    if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => guarded(() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         Schedule
       </button>
     );
     return () => setHeaderAction(null);
-  }, [canCreate, setHeaderAction]);
+  }, [setHeaderAction]);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);

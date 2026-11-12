@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Notification from "../models/notificationModel.js";
+import Role from "../models/roleModel.js";
 import { CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 
 const DISPLAY_TYPES = new Set(["modal", "banner", "notification"]);
@@ -24,15 +25,30 @@ const toObjectIdList = (ids) => {
 
 const normalizeRole = (r) => String(r || "").trim().toLowerCase();
 
-const resolveTargetUserQuery = ({ target }) => {
+const resolveTargetUserQuery = async ({ target }) => {
   const type = String(target?.type || "all").trim();
 
-  const churchRoles = new Set([...(CHURCH_ROLES || []), "associateadmin"]);
+  // Role sets must include DB-backed custom roles — a system-scoped role
+  // the super admin created should be excluded from church announcements
+  // just like the built-ins, and church-scoped custom roles included.
+  const churchRoles = new Set([...(CHURCH_ROLES || [])]);
+  const systemRoles = new Set([...(SYSTEM_ROLES || [])]);
+  try {
+    const dbRoles = await Role.find({ isActive: true }).select("key scope").lean();
+    for (const r of dbRoles || []) {
+      const key = normalizeRole(r?.key);
+      if (!key) continue;
+      if (r.scope === "system") systemRoles.add(key);
+      else churchRoles.add(key);
+    }
+  } catch {
+    void 0;
+  }
 
   const base = {
     isActive: true,
     role: {
-      $nin: Array.from(new Set([...(SYSTEM_ROLES || []), "superadmin", "supportadmin"]))
+      $nin: Array.from(systemRoles)
     }
   };
 

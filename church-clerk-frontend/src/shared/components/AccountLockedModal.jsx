@@ -2,12 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useSubscriptionLock } from "../context/SubscriptionLockContext.jsx";
 
 export default function AccountLockedModal() {
-  const { modalOpen, modalMessage, modalPayVisible, lockTitle, lockMessage, closeLockModal } = useSubscriptionLock();
+  const { modalOpen, modalMessage, modalTitle, modalPayVisible, lockTitle, lockMessage, closeLockModal } = useSubscriptionLock();
   const navigate = useNavigate();
 
   if (!modalOpen) return null;
 
-  const title = lockTitle || "Actions Blocked";
+  const title = modalTitle || lockTitle || "Actions Blocked";
   const message = modalMessage || lockMessage || "Your account is currently in read-only mode. Renew your subscription to restore full access.";
 
   return (

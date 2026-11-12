@@ -110,15 +110,14 @@ function CareCaseDetails({ open, careCase, onClose, onEdit, onLogVisit }) {
           <div>
             <div className="flex items-center justify-between">
               <div className="font-semibold text-gray-900 text-sm">Visit History</div>
-              {canEdit && (
-                <button
+              {<button
                   type="button"
-                  onClick={() => guarded(() => onLogVisit?.(careCase))}
+                  onClick={() => guarded(() => onLogVisit?.(careCase), "memberCare", "update")}
                   className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                 >
                   + Log Visit
                 </button>
-              )}
+              }
             </div>
 
             <div className="mt-3">
@@ -156,17 +155,16 @@ function CareCaseDetails({ open, careCase, onClose, onEdit, onLogVisit }) {
             </div>
           </div>
 
-          {canEdit && (
-            <div className="flex justify-end">
+          {<div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => guarded(() => onEdit?.(careCase))}
+                onClick={() => guarded(() => onEdit?.(careCase), "memberCare", "update")}
                 className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
               >
                 Edit Case
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
     </div>

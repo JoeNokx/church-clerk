@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { getOpenSupportTicketCount } from "../Services/systemAdmin.api.js";
+import { useAuth } from "../../Auth/useAuth.js";
 
 const linkBase = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm";
 const linkInactive = "text-gray-700 hover:bg-gray-50";
@@ -15,41 +16,49 @@ const ChurchIcon = () => (
 );
 
 function NavItems({ openTicketCount, onLinkClick }) {
+  const { hasPermission } = useAuth();
+
+  // Each item mirrors the module/action that gates its backend routes, so a
+  // system role never sees a menu it can't actually use.
+  const items = [
+    { to: "/admin/dashboard", label: "Dashboard", show: hasPermission("dashboard", "read") },
+    { to: "/admin/churches", label: "Churches", show: hasPermission("systemChurches", "read") },
+    {
+      to: "/admin/users",
+      label: "Users & Roles",
+      show: hasPermission("systemUsers", "read") || hasPermission("systemRoles", "read")
+    },
+    { to: "/admin/billing/plans", label: "Billing", show: hasPermission("systemBilling", "read") },
+    {
+      to: "/admin/announcements",
+      label: "Announcements",
+      show: hasPermission("announcements", "read") || hasPermission("systemSupport", "read"),
+      badge: openTicketCount
+    },
+    { to: "/admin/referrals", label: "Referrals System", show: hasPermission("referrals", "read") },
+    { to: "/admin/audit", label: "Audit Log", show: hasPermission("settingsAuditLog", "read") },
+    { to: "/admin/settings", label: "System Settings", show: hasPermission("systemBilling", "update") || hasPermission("systemUsers", "create") }
+  ];
+
   return (
     <div className="space-y-1">
-      <NavLink to="/admin/dashboard" className={itemClass} onClick={onLinkClick}>
-        Dashboard
-      </NavLink>
-      <NavLink to="/admin/churches" className={itemClass} onClick={onLinkClick}>
-        Churches
-      </NavLink>
-      <NavLink to="/admin/users" className={itemClass} onClick={onLinkClick}>
-        Users &amp; Roles
-      </NavLink>
-      <NavLink to="/admin/billing/plans" className={itemClass} onClick={onLinkClick}>
-        Billing
-      </NavLink>
-      <NavLink
-        to="/admin/announcements"
-        className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive} justify-between`}
-        onClick={onLinkClick}
-      >
-        <span>Announcements</span>
-        {openTicketCount > 0 && (
-          <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5">
-            {openTicketCount > 99 ? "99+" : openTicketCount}
-          </span>
-        )}
-      </NavLink>
-      <NavLink to="/admin/referrals" className={itemClass} onClick={onLinkClick}>
-        Referrals System
-      </NavLink>
-      <NavLink to="/admin/audit" className={itemClass} onClick={onLinkClick}>
-        Audit Log
-      </NavLink>
-      <NavLink to="/admin/settings" className={itemClass} onClick={onLinkClick}>
-        System Settings
-      </NavLink>
+      {items.filter((item) => item.show).map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          className={item.badge > 0
+            ? ({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive} justify-between`
+            : itemClass}
+          onClick={onLinkClick}
+        >
+          <span>{item.label}</span>
+          {item.badge > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5">
+              {item.badge > 99 ? "99+" : item.badge}
+            </span>
+          )}
+        </NavLink>
+      ))}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import ProjectContribution from "../../../models/financeModel/projectModel/proje
 import ProjectExpenses from "../../../models/financeModel/projectModel/projectExpenseModel.js";
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js";
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 // A deadline counts as missed only once the deadline day itself has fully passed.
@@ -84,7 +85,7 @@ const getAllChurchProjects = async (req, res) => {
                 const query = {};
             
                 // Restrict by church for non-admins
-                if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if (!isSystemViewer(req)) {
                     query.church = req.activeChurch._id;
                 }
 
@@ -206,7 +207,7 @@ const getSingleChurchProjects = async (req, res) => {
         const { id } = req.params;
         const query = { _id: id };
 
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if (!isSystemViewer(req)) {
             query.church = req.activeChurch._id;
         }
 
@@ -219,7 +220,7 @@ const getSingleChurchProjects = async (req, res) => {
         }
 
         const subQuery = {};
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if (!isSystemViewer(req)) {
             subQuery.church = req.activeChurch._id;
         }
 
@@ -261,7 +262,7 @@ const updateChurchProjects = async (req, res) => {
          const {id} = req.params
                 const query = {_id: id}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
 
@@ -288,7 +289,7 @@ const deleteChurchProjects = async (req, res) => {
         const {id} = req.params
                 const query = {_id: id}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
         
@@ -425,7 +426,7 @@ const getChurchProjectTransactions = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const churchFilter = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       churchFilter.church = req.activeChurch._id;
     }
 

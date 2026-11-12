@@ -646,7 +646,7 @@ function TemplatesTab({ open, onUseTemplate }) {
   };
 
   const onSave = async () => {
-    if (!canWrite) return;
+    if (!canWrite) { guarded(undefined, "announcements", "create"); return; }
     setError("");
     setLoading(true);
     try {
@@ -695,7 +695,7 @@ function TemplatesTab({ open, onUseTemplate }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Weekly service reminder"
-            disabled={loading || !canWrite}
+            disabled={loading}
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
 
@@ -703,16 +703,15 @@ function TemplatesTab({ open, onUseTemplate }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="e.g. Dear {firstName}, service holds this Sunday at 9am."
-            disabled={loading || !canWrite}
+            disabled={loading}
             className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
           />
         </fieldset>
 
-        {canWrite ? (
-        <div className="mt-3 flex items-center justify-end gap-2">
+        {(<div className="mt-3 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={resetForm}
+            onClick={() => guarded(resetForm, "announcements", "create")}
             disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
@@ -720,14 +719,13 @@ function TemplatesTab({ open, onUseTemplate }) {
           </button>
           <button
             type="button"
-            onClick={() => guarded(onSave)}
+            onClick={() => guarded(onSave, "announcements", "create")}
             disabled={loading}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
           </button>
-        </div>
-        ) : null}
+        </div>)}
       </div>
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -767,9 +765,9 @@ function TemplatesTab({ open, onUseTemplate }) {
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(t) },
-                        canWrite && { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                        canWrite && { label: "Edit", onClick: () => guarded(() => onEdit(t)) },
-                        canWrite && { label: "Delete", onClick: () => guarded(() => onDelete(t?._id)), danger: true }
+                        { label: "Use", onClick: () => guarded(() => onUseTemplate?.(t), "announcements", "create"), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                        { label: "Edit", onClick: () => guarded(() => onEdit(t), "announcements", "create") },
+                        { label: "Delete", onClick: () => guarded(() => onDelete(t?._id), "announcements", "create"), danger: true }
                       ]} />
                     </td>
                   </tr>
@@ -968,7 +966,7 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       { label: "Continue Editing", onClick: () => onUseDraft?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      canDelete && m?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDeleteRow(m)), danger: true, disabled: actionLoadingId === m?._id }
+                      m?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDeleteRow(m), "announcements", "delete"), danger: true, disabled: actionLoadingId === m?._id }
                     ]} />
                   </td>
                 </tr>
@@ -1014,7 +1012,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
   const [rows, setRows] = useState([]);
 
   const { can } = useContext(PermissionContext) || {};
-  const canView = useMemo(() => (typeof can === "function" ? can("announcements", "view") : false), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? can("announcements", "read") : false), [can]);
   const canUpdate = useMemo(() => (typeof can === "function" ? can("announcements", "update") : true), [can]);
 
   const [menuId, setMenuId] = useState(null);
@@ -1160,8 +1158,6 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
             ) : (
               pagedRows.map((m, idx) => {
                 const status = String(m?.status || "");
-                const canEdit = isScheduledVariant && status === "scheduled" && canUpdate;
-                const canCancel = isScheduledVariant && status === "scheduled" && canUpdate;
 
                 return (
                   <tr key={m?._id || `m-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
@@ -1188,8 +1184,8 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         canView && { label: "View", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                        canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(m)), disabled: actionLoadingId === m?._id },
-                        canCancel && { label: "Cancel", onClick: () => guarded(() => onCancelRow(m)), danger: true, disabled: actionLoadingId === m?._id }
+                        { label: "Edit", onClick: () => guarded(() => openEdit(m), "announcements", "update"), disabled: actionLoadingId === m?._id },
+                        { label: "Cancel", onClick: () => guarded(() => onCancelRow(m), "announcements", "update"), danger: true, disabled: actionLoadingId === m?._id }
                       ]} />
                     </td>
                   </tr>
@@ -1626,10 +1622,10 @@ function DeliveryReportModal({ open, onClose, message }) {
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            {isFailed && canResend ? (
+                            {isFailed ? (
                               <button
                                 type="button"
-                                onClick={() => guarded(() => onResend(d?._id))}
+                                onClick={() => guarded(() => onResend(d?._id), "announcements", "create")}
                                 disabled={resendingId === d?._id}
                                 className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-60 text-xs"
                               >
@@ -2377,7 +2373,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   };
 
   const runSendNow = async ({ draft }) => {
-    if (!canWrite) return;
+    if (!canWrite) { guarded(undefined, "announcements", "create"); return; }
 
     setSubmitAction(draft ? "draft" : "send");
     setLoading(true);
@@ -2443,7 +2439,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   };
 
   const onSend = async ({ draft = false } = {}) => {
-    if (!canWrite) return;
+    if (!canWrite) { guarded(undefined, "announcements", "create"); return; }
 
     setError("");
     setSuccess("");
@@ -2867,11 +2863,10 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         </div>
           </fieldset>
 
-        {canWrite ? (
-        <div className="mt-6 flex items-center justify-end gap-2">
+        {(<div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={resetForm}
+            onClick={() => guarded(resetForm, "announcements", "create")}
             disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
@@ -2879,7 +2874,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           </button>
           <button
             type="button"
-            onClick={() => guarded(() => onSend({ draft: true }))}
+            onClick={() => guarded(() => onSend({ draft: true }), "announcements", "create")}
             disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
@@ -2887,14 +2882,13 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           </button>
           <button
             type="button"
-            onClick={() => guarded(() => onSend({ draft: false }))}
+            onClick={() => guarded(() => onSend({ draft: false }), "announcements", "create")}
             disabled={loading || (!hasEnoughCredits && estimatedTotalCost > 0)}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {loading && submitAction === "send" ? "Sending..." : "Send Announcement"}
           </button>
-        </div>
-        ) : null}
+        </div>)}
       </div>
     </div>
   );
@@ -3719,15 +3713,13 @@ function AutomatedTab({ open }) {
           >
             Refresh
           </button>
-          {canWrite ? (
-            <button
+          {(<button
               type="button"
-              onClick={() => guarded(openCreate)}
+              onClick={() => guarded(openCreate, "announcements", "create")}
               className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
             >
               New Automation
-            </button>
-          ) : null}
+            </button>)}
         </div>
       </div>
 
@@ -3775,10 +3767,10 @@ function AutomatedTab({ open }) {
                     {a?.lastRunError ? <div className="mt-0.5 text-red-600 text-xs max-w-[200px] whitespace-normal">{a.lastRunError}</div> : null}
                   </td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                    {canUpdate ? (
+                    {true ? (
                       <button
                         type="button"
-                        onClick={() => guarded(() => onToggle(a))}
+                        onClick={() => guarded(() => onToggle(a), "announcements", "update")}
                         disabled={actionLoadingId === a?._id}
                         aria-label={a?.enabled ? "Disable automation" : "Enable automation"}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition disabled:opacity-60 ${a?.enabled ? "bg-blue-600" : "bg-gray-300"}`}
@@ -3792,8 +3784,8 @@ function AutomatedTab({ open }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => setViewRow(a), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      canUpdate && { label: "Edit", onClick: () => guarded(() => openEdit(a)) },
-                      canDelete && { label: "Delete", onClick: () => guarded(() => onDelete(a)), danger: true, disabled: actionLoadingId === a?._id }
+                      { label: "Edit", onClick: () => guarded(() => openEdit(a), "announcements", "update") },
+                      { label: "Delete", onClick: () => guarded(() => onDelete(a), "announcements", "delete"), danger: true, disabled: actionLoadingId === a?._id }
                     ]} />
                   </td>
                 </tr>
@@ -4078,7 +4070,7 @@ function AnnouncementPage() {
         <WalletCard
           wallet={wallet}
           allowance={allowance}
-          onFund={canWrite ? () => guarded(openFund) : undefined}
+          onFund={() => guarded(openFund, "announcements", "create")}
           onViewHistory={() => setTab("wallet-history")}
           isGhana={isGhana}
           usdToGhs={usdToGhs}

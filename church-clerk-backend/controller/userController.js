@@ -1,17 +1,14 @@
 import User from "../models/userModel.js"
-import { ROLE_PERMISSIONS, CHURCH_ROLES } from "../config/roles.js"
+import { ROLE_PERMISSIONS, CHURCH_ROLES, ROLE_DISPLAY_NAMES } from "../config/roles.js"
 import cloudinary from "../config/cloudinary.js"
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js"
 import Role from "../models/roleModel.js"
-import { MODULES } from "../config/permissions.js"
+import { MODULES, SYSTEM_MODULES } from "../config/permissions.js"
 import { resolvePermissions } from "../utils/resolvePermissions.js"
 import Subscription from "../models/billingModel/subscriptionModel.js"
 import Plan from "../models/billingModel/planModel.js"
 import { sendRegistrationVerificationEmail } from "../services/auth/emailVerificationService.js"
 import Member from "../models/memberModel.js"
-import Church from "../models/churchModel.js"
-import { getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js"
-import { linkUserToMatchingMember } from "../utils/memberUserLink.js"
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -225,9 +222,12 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "Active church context is required" });
     }
 
-    const { fullName, email, phoneNumber, password, role, autoRegisterMember, linkMemberId } = req.body;
+    const { fullName, email, phoneNumber, password, role, linkMemberId } = req.body;
     if (!fullName || !email || !phoneNumber || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+    if (!linkMemberId) {
+      return res.status(400).json({ message: "Select a registered member to create a user account" });
     }
 
     let validatedPhoneNumber;
@@ -238,8 +238,13 @@ const createChurchUser = async (req, res) => {
     }
 
     const roleKey = String(role || "").trim().toLowerCase();
+    if (roleKey === "churchclerkadmin") {
+      return res.status(403).json({ message: "The ChurchClerk Admin role cannot be assigned here" });
+    }
     let roleRef = null;
-    const dbRole = await Role.findOne({ key: roleKey, scope: "church" }).select("_id isActive").lean();
+    const dbRole =
+      (await Role.findOne({ key: roleKey, scope: "church", church: churchId }).select("_id isActive").lean()) ||
+      (await Role.findOne({ key: roleKey, scope: "church", church: null }).select("_id isActive").lean());
     if (dbRole?._id) {
       if (dbRole?.isActive === false) {
         return res.status(400).json({ message: "Invalid role selected" });
@@ -259,21 +264,14 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "Phone number already registered" });
     }
 
-    // "Not registered as a member" — if a member already matches this
-    // phone/email, the admin should use the search-member option instead.
-    let preExistingMember = null;
-    if (autoRegisterMember) {
-      const normalizedEmail = String(email || "").toLowerCase().trim();
-      preExistingMember = await Member.findOne({
-        church: churchId,
-        $or: [
-          { phoneNumber: validatedPhoneNumber },
-          { email: { $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } }
-        ]
-      }).lean();
-      if (preExistingMember) {
-        return res.status(409).json({ message: "This person is already a member — choose the 'An existing member' option to link them." });
-      }
+    // Users can only be created for registered members of this church —
+    // validate the link target before creating the account.
+    const linkTarget = await Member.findOne({ _id: linkMemberId, church: churchId });
+    if (!linkTarget) {
+      return res.status(400).json({ message: "Member not found in this church" });
+    }
+    if (linkTarget.user) {
+      return res.status(409).json({ message: "This member already has a user account" });
     }
 
     const user = await User.create({
@@ -293,75 +291,10 @@ const createChurchUser = async (req, res) => {
       console.error("[createChurchUser] Failed to send verification email:", err.message);
     });
 
-    // Attach this account to an existing member record with the same
-    // phone/email when the explicit flows below don't already handle it.
-    if (!autoRegisterMember && !linkMemberId) {
-      linkUserToMatchingMember(user).catch(() => {});
-    }
+    linkTarget.user = user._id;
+    await linkTarget.save();
 
-    // Optionally register the new user as a church member too — skipped if a
-    // member already matches their phone number or email.
-    let member = null;
-    if (autoRegisterMember) {
-      try {
-        const normalizedEmail = String(email || "").toLowerCase().trim();
-        {
-          const nameParts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
-          const firstName = nameParts[0] || "Member";
-          const lastName = nameParts.slice(1).join(" ");
-
-          const prefix = await getChurchPrefix(churchId);
-          const issuedSerial = await takeMemberSerial(churchId);
-          const memberId = generateMemberId(prefix || "CH", issuedSerial - 1);
-
-          try {
-            member = await Member.create({
-              memberId,
-              firstName,
-              lastName,
-              email: normalizedEmail,
-              phoneNumber: validatedPhoneNumber,
-              status: "active",
-              church: churchId,
-              createdBy: req.user._id,
-              user: user._id
-            });
-            const totalMembers = await Member.countDocuments({ church: churchId });
-            await Church.findByIdAndUpdate(churchId, { memberCount: totalMembers });
-          } catch (memberErr) {
-            if (memberErr?.code !== 11000 && memberErr?.errorResponse?.code !== 11000) {
-              await releaseMemberSerial(churchId, issuedSerial).catch(() => {});
-            }
-            throw memberErr;
-          }
-        }
-      } catch (memberErr) {
-        // Best-effort — the user account was created successfully either way.
-        console.error("[createChurchUser] member auto-register failed:", memberErr?.message || memberErr);
-      }
-    }
-
-    // Optionally link the new user account to an existing member record.
-    let linkedMember = null;
-    let memberLinkConflict = false;
-    if (linkMemberId) {
-      try {
-        const target = await Member.findOne({ _id: linkMemberId, church: churchId });
-        if (target) {
-          if (target.user && String(target.user) !== String(user._id)) {
-            memberLinkConflict = true;
-          } else {
-            target.user = user._id;
-            await target.save();
-            linkedMember = target;
-          }
-        }
-      } catch (linkErr) {
-        console.error("[createChurchUser] member link failed:", linkErr?.message || linkErr);
-      }
-    }
-
-    return res.status(201).json({ message: "User created. A verification email has been sent to their inbox.", user, member, linkedMember, memberLinkConflict });
+    return res.status(201).json({ message: "User created. A verification email has been sent to their inbox.", user, linkedMember: linkTarget });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -427,9 +360,20 @@ const updateChurchUser = async (req, res) => {
     if (email !== undefined) update.email = email;
     if (phoneNumber !== undefined) update.phoneNumber = validatedPhoneNumber;
     if (role !== undefined) {
+      // User management permissions never apply to one's own account.
+      if (String(req.user?._id || "") === String(id)) {
+        return res.status(403).json({ message: "You cannot change your own role" });
+      }
       const roleKey = String(role || "").trim().toLowerCase();
+      // The ChurchClerk Admin role is granted at account creation by the
+      // system — it can neither be assigned nor changed from a church context.
+      if (roleKey === "churchclerkadmin" || String(existing.role || "").trim().toLowerCase() === "churchclerkadmin") {
+        return res.status(403).json({ message: "The ChurchClerk Admin role cannot be assigned or changed here" });
+      }
       let roleRef = null;
-      const dbRole = await Role.findOne({ key: roleKey, scope: "church" }).select("_id isActive").lean();
+      const dbRole =
+        (await Role.findOne({ key: roleKey, scope: "church", church: churchId }).select("_id isActive").lean()) ||
+        (await Role.findOne({ key: roleKey, scope: "church", church: null }).select("_id isActive").lean());
       if (dbRole?._id) {
         if (dbRole?.isActive === false) {
           return res.status(400).json({ message: "Invalid role selected" });
@@ -483,19 +427,19 @@ const setChurchUserActiveStatus = async (req, res) => {
       return res.status(400).json({ message: "You cannot change your own account status" });
     }
 
-    const actorRole = String(req.user?.role || "");
-    const isAdminActor = ["churchadmin", "superadmin", "supportadmin"].includes(actorRole);
-    if (!isAdminActor) {
-      return res.status(403).json({ message: "Only church admins can activate or deactivate user accounts" });
-    }
+    // The route's requirePermission("settingsUsersRoles","deactivate") is the
+    // real gate — any role (built-in or custom) holding that permission may
+    // activate/deactivate. No extra built-in-only check here.
 
     const target = await User.findOne({ _id: id, church: churchId }).select("role fullName email phoneNumber isActive").lean();
     if (!target) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (actorRole === "churchadmin" && target.role === "churchadmin") {
-      return res.status(403).json({ message: "You cannot deactivate another church admin" });
+    // ChurchClerk Admin accounts are managed by the system admin — no church
+    // user (including the account holder) can activate or deactivate them here.
+    if (String(target.role || "").trim().toLowerCase() === "churchclerkadmin") {
+      return res.status(403).json({ message: "ChurchClerk Admin accounts can only be managed by the system admin" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -514,8 +458,17 @@ const setChurchUserActiveStatus = async (req, res) => {
 
 const getRolePermissionMatrix = async (req, res) => {
   try {
-    const dbChurchRoles = await Role.find({ scope: "church", isActive: true })
-      .select("key")
+    const churchId = req.activeChurch?._id || null;
+
+    const roleFilter = { scope: "church", isActive: true };
+    if (churchId) {
+      roleFilter.$or = [{ church: churchId }, { church: null }];
+    } else {
+      roleFilter.church = null;
+    }
+
+    const dbChurchRoles = await Role.find(roleFilter)
+      .select("key name")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -529,16 +482,34 @@ const getRolePermissionMatrix = async (req, res) => {
 
     const roles = {};
     for (const roleKey of churchRoles) {
-      roles[roleKey] = await resolvePermissions(roleKey, null, "church");
+      roles[roleKey] = await resolvePermissions(roleKey, null, "church", churchId);
+    }
+
+    // Display names for every role in the list — built-ins come from the
+    // config map, custom roles keep the name the church gave them.
+    const dbRoleNames = {};
+    for (const r of dbChurchRoles || []) {
+      const k = String(r?.key || "").trim().toLowerCase();
+      if (k && r?.name) dbRoleNames[k] = r.name;
+    }
+    const roleNames = {};
+    for (const roleKey of churchRoles) {
+      roleNames[roleKey] = dbRoleNames[roleKey] || ROLE_DISPLAY_NAMES?.[roleKey] || roleKey;
     }
 
     // Only church-scoped roles are exposed to the church app — system roles
     // must never appear here.
     const roleList = {
-      churchRoles
+      churchRoles,
+      builtinRoles: [...(CHURCH_ROLES || [])]
     };
 
-    return res.status(200).json({ roles, roleList, modules: MODULES });
+    // System-scope modules power the admin portal — never offer them to a
+    // church role editor.
+    const churchModules = { ...MODULES };
+    for (const k of SYSTEM_MODULES) delete churchModules[k];
+
+    return res.status(200).json({ roles, roleList, roleNames, modules: churchModules });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

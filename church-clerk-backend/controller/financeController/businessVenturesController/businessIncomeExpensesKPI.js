@@ -1,6 +1,7 @@
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 const getIncomeExpensesKPI = async (req, res) => {
@@ -12,7 +13,7 @@ const getIncomeExpensesKPI = async (req, res) => {
     // BASE QUERY
     const query = { businessVentures: businessId };
 
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

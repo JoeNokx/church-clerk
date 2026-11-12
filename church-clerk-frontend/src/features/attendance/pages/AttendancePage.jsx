@@ -48,15 +48,15 @@ const FALLBACK_SERVICE_TYPES = [
   "Sunday Service",
   "Sunday First Service",
   "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
   "Special Program",
   "Worship Service",
   "Bible Study",
   "Children Service",
   "Midweek Service",
-  "Prayer Meeting"
+  "Prayer Meeting",
+  "cells Meeting",
+  "groups Meeting",
+  "department Meeting"
 ];
 
 function formatDate(value) {
@@ -347,7 +347,10 @@ function AttendancePageInner() {
   }, [location?.state, location.pathname, location.search, navigate]);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : FALLBACK_SERVICE_TYPES;
+  const serviceTypeOptions = useMemo(
+    () => [...new Set([...(lookupServiceTypes || []), ...FALLBACK_SERVICE_TYPES])],
+    [lookupServiceTypes]
+  );
   const absServiceTypeOptions = useMemo(
     () => [...new Set([...serviceTypeOptions, ...absServiceTypes])].sort(),
     [serviceTypeOptions, absServiceTypes]
@@ -691,7 +694,7 @@ function AttendancePageInner() {
         <div className="flex items-center justify-between gap-3 md:items-start">
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Attendance Records</h2>
           <div className="shrink-0 flex items-center gap-2">
-            {activeTab === "log" && canCreateAttendance ? (
+            {activeTab === "log" ? (
               <>
                 <div className="relative">
                   <button
@@ -710,14 +713,14 @@ function AttendancePageInner() {
                       <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openLinkModal(); })}
+                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openLinkModal(); }, "attendance", "create")}
                           className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                         >
                           Check-In Link
                         </button>
                         <button
                           type="button"
-                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openQrModal(); })}
+                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openQrModal(); }, "attendance", "create")}
                           className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                         >
                           QR Code
@@ -729,7 +732,7 @@ function AttendancePageInner() {
                 <button
                   type="button"
                   data-hq-action="true"
-                  onClick={() => guarded(() => void openIndivForm("create", null))}
+                  onClick={() => guarded(() => void openIndivForm("create", null), "attendance", "create")}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
                 >
                   <span className="leading-none text-lg">+</span>
@@ -787,12 +790,10 @@ function AttendancePageInner() {
                       <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {canUpdateAttendance ? (
-                        <button type="button" onClick={saveManualMarking} disabled={indivMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                      {(<button type="button" onClick={() => guarded(saveManualMarking, "attendance", "update")} disabled={indivMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
                           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                           {indivMarkingSaving ? "Saving..." : "Save Attendance"}
-                        </button>
-                      ) : null}
+                        </button>)}
                       <button type="button" onClick={() => { if (!indivMarkingSaving) setIndivMarkingOpen(false); }} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                       </button>
@@ -1040,19 +1041,17 @@ function AttendancePageInner() {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="font-semibold text-gray-900 text-xs truncate">{formatDay(r?.date) || "-"}, {formatDate(r?.date)}</div>
                                 <div className="flex items-center gap-1 shrink-0">
-                                  {canUpdateAttendance ? (
-                                    <button
+                                  {(<button
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); guarded(() => void openIndivForm("edit", r)); }}
+                                      onClick={(e) => { e.stopPropagation(); guarded(() => void openIndivForm("edit", r), "attendance", "update"); }}
                                       className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
                                     >
                                       <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                                    </button>
-                                  ) : null}
-                                  {canDeleteAttendance && r?.canDelete !== false ? (
+                                    </button>)}
+                                  {r?.canDelete !== false ? (
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); guarded(() => confirmDelete(r?._id)); }}
+                                      onClick={(e) => { e.stopPropagation(); guarded(() => confirmDelete(r?._id), "attendance", "delete"); }}
                                       className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
                                     >
                                       <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1149,10 +1148,10 @@ function AttendancePageInner() {
                               <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {canUpdateAttendance && sessionTab === "members" ? (
+                              {sessionTab === "members" ? (
                                 <button
                                   type="button"
-                                  onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}
+                                  onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); }, "attendance", "update")}
                                   className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1207,16 +1206,14 @@ function AttendancePageInner() {
                           <div>
                             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 md:px-6 py-3">
                               <div className="text-gray-500 text-xs">Visitors recorded for this service count toward the actual attendance.</div>
-                              {canCreateVisitor ? (
-                                <button
+                              {(<button
                                   type="button"
-                                  onClick={() => guarded(() => { setEditingVisitor(null); setVisitorFormSession(indivViewing); setIsVisitorFormOpen(true); })}
+                                  onClick={() => guarded(() => { setEditingVisitor(null); setVisitorFormSession(indivViewing); setIsVisitorFormOpen(true); }, "visitors", "create")}
                                   className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs shrink-0"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                                   Add Visitor
-                                </button>
-                              ) : null}
+                                </button>)}
                             </div>
                             <VisitorTable
                               visitors={sessionVisitors}

@@ -22,7 +22,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "read"),
   getAnnualFinancialStatement
 );
@@ -32,7 +32,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "read"),
   getMonthlyFinancialStatement
 );
@@ -42,7 +42,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "read"),
   getQuarterlyFinancialStatement
 );
@@ -52,7 +52,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "read"),
   getStatementBreakdownDetails
 );
@@ -62,7 +62,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "export"),
   exportFinancialStatement
 );
@@ -73,7 +73,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("financialStatement", "read"),
   getOpeningBalances
 );
@@ -83,8 +83,8 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("offerings", "update"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financialStatement", "create"),
   createOpeningBalance
 );
 router.put(
@@ -93,8 +93,8 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("offerings", "update"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financialStatement", "update"),
   updateOpeningBalance
 );
 

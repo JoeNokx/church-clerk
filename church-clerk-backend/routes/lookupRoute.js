@@ -14,21 +14,15 @@ const router = express.Router();
 const allowedReadRoles = [
   "superadmin",
   "supportadmin",
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader"
+  "churchclerkadmin",
+  
 ];
 
 const allowedWriteRoles = [
   "superadmin",
   "supportadmin",
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader"
+  "churchclerkadmin",
+  
 ];
 
 router.get(

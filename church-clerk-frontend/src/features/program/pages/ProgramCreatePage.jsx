@@ -6,11 +6,11 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { createProgram as apiCreateProgram, getProgram as apiGetProgram, updateProgram as apiUpdateProgram } from "../services/program.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
-  "Service",
-  "Worship",
+  "Worship & Praises",
   "Prayers",
   "Outreach",
   "Bible Study",
@@ -31,11 +31,12 @@ function Field({ label, children }) {
 
 function ProgramCreatePage({ open, onClose, onSuccess, mode = "create", programId }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const canCreate = useMemo(() => (typeof can === "function" ? can("programs", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("programs", "update") : false), [can]);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("eventCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])];
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -175,16 +176,18 @@ function ProgramCreatePage({ open, onClose, onSuccess, mode = "create", programI
 
     if (isEdit) {
       if (!canEdit) {
-        setError("You do not have permission to edit programs.");
+          setError("You do not have permission to edit programs.");
         setIsSubmitting(false);
-        return;
-      }
+        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
     } else {
       if (!canCreate) {
-        setError("You do not have permission to create programs.");
+          setError("You do not have permission to create programs.");
         setIsSubmitting(false);
-        return;
-      }
+        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
     }
 
     if (isEdit && !programId) {
@@ -338,7 +341,7 @@ function ProgramCreatePage({ open, onClose, onSuccess, mode = "create", programI
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block font-semibold text-gray-500 text-xs">Category</label>
-                  {canCreate || canEdit ? (
+                  
                     <AddLookupValueButton
                       label="Add category"
                       kind="eventCategory"
@@ -347,7 +350,6 @@ function ProgramCreatePage({ open, onClose, onSuccess, mode = "create", programI
                         setCategory(value);
                       }}
                     />
-                  ) : null}
                 </div>
                 <div className="mt-2">
                   <select

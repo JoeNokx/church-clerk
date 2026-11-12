@@ -5,6 +5,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import ChurchContext from "../../church/church.store.js";
+import PermissionContext from "../../permissions/permission.store.js";
 
 const STATUS_LABELS = {
   PENDING_APPROVAL: { label: "Pending", className: "bg-amber-100 text-amber-700" },
@@ -204,6 +205,8 @@ export default function ApprovalsPage() {
   const guarded = useGuardedAction();
   const churchCtx = useContext(ChurchContext);
   const canEditChurch = churchCtx?.activeChurch?._id ? churchCtx?.activeChurch?.canEdit !== false : true;
+  const { can } = useContext(PermissionContext) || {};
+  const canApprove = typeof can === "function" ? can("financeGovernance", "approve") : false;
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -311,11 +314,11 @@ export default function ApprovalsPage() {
                     ) : null}
                   </div>
 
-                  {row.status === "PENDING_APPROVAL" && canEditChurch ? (
+                  {row.status === "PENDING_APPROVAL" ? (
                     <div className="flex shrink-0 gap-2">
                       <button
                         type="button"
-                        onClick={() => guarded(() => setApproveTarget(row._id))}
+                        onClick={() => guarded(() => setApproveTarget(row._id), "financeGovernance", "approve")}
                         disabled={isActing || approveMutation.isPending}
                         className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                       >
@@ -323,7 +326,7 @@ export default function ApprovalsPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => guarded(() => setRejectTarget(row._id))}
+                        onClick={() => guarded(() => setRejectTarget(row._id), "financeGovernance", "approve")}
                         disabled={isActing || rejectMutation.isPending}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >

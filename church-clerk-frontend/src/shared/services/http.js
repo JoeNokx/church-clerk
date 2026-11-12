@@ -286,6 +286,15 @@ api.interceptors.response.use(
       }));
     }
 
+    // Read-only 403s (deactivated account, branch-view writes) hit the same
+    // modal so unguarded buttons still explain the block instead of failing
+    // silently.
+    if (error.response?.status === 403 && error.response?.data?.readOnly) {
+      window.dispatchEvent(new CustomEvent("subscriptionLocked", {
+        detail: { message: error.response.data.message || "Your account is currently read-only.", title: "Actions Blocked" }
+      }));
+    }
+
     if (error.response?.status === 405) {
       const method = String(error?.config?.method || "").toLowerCase();
       if (method === "put" || method === "patch") {

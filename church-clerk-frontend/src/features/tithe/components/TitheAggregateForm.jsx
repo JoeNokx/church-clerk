@@ -4,14 +4,14 @@ import TitheContext from "../tithe.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const MAX_DESCRIPTION_LENGTH = 500;
 
 const SERVICE_TYPES = [
   "Sunday Service",
-  "First Sunday Service",
-  "Second Sunday Service",
-  "Third Sunday Service",
+  "Sunday First Service",
+  "Sunday Second Service",
   "Worship Service",
   "Bible Study",
   "Special Program",
@@ -25,13 +25,14 @@ const SERVICE_TYPES = [
 
 function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(TitheContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+  const serviceTypeOptions = [...new Set([...(lookupServiceTypes || []), ...SERVICE_TYPES])];
 
   const [serviceType, setServiceType] = useState("");
   const [amount, setAmount] = useState("");
@@ -93,10 +94,10 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.updateTitheAggregate?.(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.createTitheAggregate?.(payload);
       }
 
@@ -137,7 +138,7 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
             <div className="md:col-span-2">
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add service"
                     kind="serviceType"
@@ -146,7 +147,6 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
                       setServiceType(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={serviceType}

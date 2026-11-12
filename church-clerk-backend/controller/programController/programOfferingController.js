@@ -1,11 +1,12 @@
 import Program from "../../models/programModel.js";
 import ProgramOffering from "../../models/programModel/programOfferingModel.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 async function getScopedProgram(req) {
   const { programId } = req.params;
   const query = { _id: programId };
 
-  if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+  if (!isSystemViewer(req)) {
     query.church = req.activeChurch._id;
   }
 

@@ -33,7 +33,10 @@ function SubscriptionLockedModal() {
 
   useEffect(() => {
     const handler = (e) => {
-      setModal(e.detail?.message || "Your subscription is suspended. Please contact support.");
+      setModal({
+        message: e.detail?.message || "Your subscription is suspended. Please contact support.",
+        title: e.detail?.title || "Subscription Suspended"
+      });
     };
     window.addEventListener("subscriptionLocked", handler);
     return () => window.removeEventListener("subscriptionLocked", handler);
@@ -49,8 +52,8 @@ function SubscriptionLockedModal() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
         </div>
-        <div className="font-semibold text-gray-900 mb-2 text-base">Subscription Suspended</div>
-        <div className="text-gray-500 mb-6 text-sm">{modal}</div>
+        <div className="font-semibold text-gray-900 mb-2 text-base">{modal.title}</div>
+        <div className="text-gray-500 mb-6 text-sm">{modal.message}</div>
         <button
           type="button"
           onClick={() => setModal(null)}

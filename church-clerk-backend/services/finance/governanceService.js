@@ -1,9 +1,21 @@
 import ApprovalRequest, { ApprovalStatuses, ApprovalActionTypes } from "../../models/financeModel/governance/approvalRequestModel.js";
 import FinancialAdjustment, { AdjustmentStatuses, ImpactLevels } from "../../models/financeModel/governance/financialAdjustmentModel.js";
 import FinancialAuditLog from "../../models/financeModel/governance/financialAuditLogModel.js";
-import { getSystemSettingsSnapshot } from "../../controller/systemSettingsController.js";
 import { getModelForEntity } from "./govModelRegistry.js";
 import OpeningBalance from "../../models/financeModel/openingBalanceModel.js";
+import Church from "../../models/churchModel.js";
+
+// Per-church governance rules. Flags default ON — an absent sub-document or
+// field (older churches, branches) reads as enforced.
+export const getChurchGovernanceFlags = (church) => ({
+  enforceBackdating: church?.governance?.enforceBackdating !== false,
+  enforceImmutability: church?.governance?.enforceImmutability !== false
+});
+
+const loadChurchGovernanceFlags = async (churchId, churchDoc) => {
+  const church = churchDoc || (churchId ? await Church.findById(churchId).select("governance").lean() : null);
+  return getChurchGovernanceFlags(church);
+};
 
 export const GovernanceModules = Object.freeze({
   TITHES: "tithes",
@@ -35,7 +47,7 @@ export async function logAudit({ actor, action, church, module, entityType, enti
   }
 }
 
-export async function enforceBackdating({ user, churchId, module, entityType, date, reason, fullBody, onApprove }) {
+export async function enforceBackdating({ user, permissions, church, churchId, module, entityType, date, reason, fullBody, onApprove }) {
   // Books-open floor: nothing may be dated before the church's declared
   // opening balance date — it would contradict the books.
   if (date) {
@@ -54,10 +66,20 @@ export async function enforceBackdating({ user, churchId, module, entityType, da
     }
   }
 
-  const isAdmin = ["superadmin", "churchadmin"].includes(String(user?.role || ""));
+  // Backdating control is a per-church preference — when the church has it
+  // off, anyone may backdate (the books-open floor above still applies).
+  const flags = await loadChurchGovernanceFlags(churchId, church);
+  if (!flags.enforceBackdating) return { status: "APPROVED" };
 
-  // Admins can always backdate freely
-  if (isAdmin) return { status: "APPROVED" };
+  // Roles granted financeGovernance.backdate (and superadmins) can always
+  // backdate freely; everyone else needs approval beyond the 24h window.
+  const canBackdate = Boolean(
+    permissions?.super ||
+    permissions?.financeGovernance?.backdate ||
+    String(user?.role || "") === "superadmin"
+  );
+
+  if (canBackdate) return { status: "APPROVED" };
 
   // Within 24 hours is fine for everyone
   if (isWithin24Hours(date)) return { status: "APPROVED" };
@@ -82,9 +104,16 @@ export async function enforceBackdating({ user, churchId, module, entityType, da
   return { status: "PENDING_APPROVAL", requestId: reqDoc._id };
 }
 
-export async function createAdjustment({ user, churchId, module, entityType, original, patch, reason, impactLevel }) {
-  const flags = await getSystemSettingsSnapshot();
-  const enforce = Boolean(flags.enforceImmutability);
+export async function createAdjustment({ user, permissions, church, churchId, module, entityType, original, patch, reason, impactLevel }) {
+  const flags = await loadChurchGovernanceFlags(churchId, church);
+  // Roles granted financeGovernance.override (and superadmins) are exempt
+  // from the approval queue even when enforcement is on.
+  const canOverride = Boolean(
+    permissions?.super ||
+    permissions?.financeGovernance?.override ||
+    String(user?.role || "") === "superadmin"
+  );
+  const enforce = Boolean(flags.enforceImmutability) && !canOverride;
 
   // Always create an adjustment entry (auditability), enforcement decides status
   const difference = buildDifference(original, patch);

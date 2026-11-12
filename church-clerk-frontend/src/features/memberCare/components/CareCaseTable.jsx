@@ -17,8 +17,6 @@ function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
   const store = useContext(MemberCareContext);
   const guarded = useGuardedAction();
 
-  const canEdit = useMemo(() => (typeof can === "function" ? can("memberCare", "update") : false), [can]);
-  const canCreate = useMemo(() => (typeof can === "function" ? can("memberCare", "create") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("memberCare", "delete") : false), [can]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -104,7 +102,7 @@ function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
       onClearDate: clearDate,
     });
     const isZero = reason === "zero";
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
 
     return (
       <EmptyState
@@ -114,7 +112,7 @@ function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
           ? "Open your first care case to start tracking pastoral care for members."
           : "We couldn't find any care cases matching your current search or filters."}
         actionLabel={showAdd ? "New Care Case" : recovery?.actionLabel}
-        onAction={showAdd ? () => guarded(onCreate) : recovery?.onAction}
+        onAction={showAdd ? () => guarded(onCreate, "memberCare", "create") : recovery?.onAction}
         secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
         onSecondary={showAdd ? null : recovery?.onSecondary}
       />
@@ -168,9 +166,9 @@ function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => onView?.(row) },
-                      canEdit && { label: "Log Visit", onClick: () => guarded(() => onLogVisit?.(row)) },
-                      canEdit && { label: "Edit", onClick: () => guarded(() => onEdit?.(row)) },
-                      canDelete && row?.canDelete && { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row)) },
+                      { label: "Log Visit", onClick: () => guarded(() => onLogVisit?.(row), "memberCare", "update") },
+                      { label: "Edit", onClick: () => guarded(() => onEdit?.(row), "memberCare", "update") },
+                      row?.canDelete && { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row), "memberCare", "delete") },
                     ]} />
                   </td>
                 </tr>

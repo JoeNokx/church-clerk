@@ -1,6 +1,7 @@
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
 import { uploadBusinessReceipt, destroyBusinessReceipt, businessReceiptDownloadUrl, validateReceiptFile } from "./businessReceipts.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 const createBusinessIncome = async (req, res) => {
@@ -19,7 +20,7 @@ const createBusinessIncome = async (req, res) => {
                 
 
                 const query = { _id: businessId };
-                if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if (!isSystemViewer(req)) {
                 query.church = req.activeChurch._id;
                 }
 
@@ -82,7 +83,7 @@ const getAllBusinessIncome = async (req, res) => {
                 const query = {businessVentures: businessId};
             
                 // Restrict by church for non-admins
-                if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if (!isSystemViewer(req)) {
                     query.church = req.activeChurch._id;
                 }
             
@@ -199,7 +200,7 @@ const updateBusinessIncome = async (req, res) => {
 
          const query = {_id: incomeId, businessVentures: businessId}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
         
@@ -254,7 +255,7 @@ const query = {
   businessVentures: businessId
 };
 
-if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+if (!isSystemViewer(req)) {
   query.church = req.activeChurch._id;
 }
 
@@ -286,7 +287,7 @@ const downloadBusinessIncomeReceipt = async (req, res) => {
         const { businessId, incomeId } = req.params;
 
         const query = { _id: incomeId, businessVentures: businessId };
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if (!isSystemViewer(req)) {
             query.church = req.activeChurch._id;
         }
 

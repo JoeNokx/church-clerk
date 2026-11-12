@@ -33,7 +33,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllGroups
 );
@@ -43,8 +43,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("organisation", "read"),
   getSingleGroup
 ); 
 router.post(
@@ -53,7 +53,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createGroup
 );
@@ -63,7 +63,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateGroup
 );
@@ -73,7 +73,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deletionGuard("group"),
   deleteGroup
@@ -86,7 +86,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   addMemberToGroup
 );
@@ -96,7 +96,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   searchMembersToAddToGroup
 );
@@ -106,7 +106,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getGroupMembers
 );
@@ -116,7 +116,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMemberRole
 );
@@ -126,7 +126,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   removeMemberFromGroup
 );
@@ -138,7 +138,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   addMeeting
 );
@@ -148,7 +148,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getMeetings
 );
@@ -158,7 +158,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMeeting
 );
@@ -168,7 +168,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deleteMeeting
 );
@@ -180,7 +180,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getOrganisationKPI
 );
@@ -191,7 +191,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createGroupIndividualAttendance
 );
@@ -201,7 +201,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllGroupIndividualAttendances
 );
@@ -211,7 +211,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getSingleGroupIndividualAttendance
 );
@@ -221,7 +221,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateGroupIndividualAttendance
 );
@@ -231,7 +231,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deletionGuard("groupIndividualAttendance", "attendanceId"),
   deleteGroupIndividualAttendance
@@ -243,7 +243,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getGroupCheckInLinkStatus
 );
@@ -253,7 +253,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   generateGroupCheckInLink
 );
@@ -263,7 +263,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   revokeGroupCheckInLink
 );
@@ -275,7 +275,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   backdatingGuard({ dateField: "date", module: "groupOffering", entityType: "groupOffering" }),
   createGroupOffering
@@ -286,7 +286,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllGroupOfferings
 );
@@ -296,7 +296,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   conditionalImmutableGuard(),
   updateGroupOffering
@@ -309,7 +309,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createOrgContribution
 );
@@ -319,7 +319,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getOrgContributions
 );
@@ -329,7 +329,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateOrgContribution
 );
@@ -339,7 +339,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deleteOrgContribution
 );
@@ -350,7 +350,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
@@ -362,7 +362,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getScopedExpenses("group")
 );
@@ -372,7 +372,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   uploadReceiptFile,
   conditionalImmutableGuard(),
@@ -384,7 +384,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   downloadScopedExpenseReceipt("group")
 );
@@ -394,7 +394,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   conditionalImmutableGuard(),
   deleteScopedExpense("group")

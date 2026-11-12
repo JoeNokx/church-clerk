@@ -41,6 +41,7 @@ import {
 } from "../../notifications/services/notifications.api.js";
 
 import GlobalSearch from "../../search/components/GlobalSearch.jsx";
+import { roleLabel } from "../../../config/roles.js";
 
 
 
@@ -939,31 +940,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-    const displayRole = user?.role
-
-
-
-      ? user.role === "churchadmin"
-
-
-
-        ? "Church Admin"
-
-
-
-        : user.role === "financialofficer"
-
-
-
-          ? "Financial Officer"
-
-
-
-          : user.role
-
-
-
-      : "";
+    const displayRole = user?.role ? roleLabel(user.role) : "";
 
 
 

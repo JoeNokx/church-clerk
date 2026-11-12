@@ -1,6 +1,7 @@
 import WelfareDisbursements from "../../../models/financeModel/welfareModel/welfareDisbursementModel.js"
 import Member from "../../../models/memberModel.js"
 import { uploadReceiptImage, destroyReceiptImage, receiptImageDownloadUrl, validateReceiptImage } from "../../../services/receiptService.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 const createWelfareDisbursement = async (req, res) => {
     
@@ -69,7 +70,7 @@ const getAllWelfareDisbursement = async (req, res) => {
                         const query = {};
                     
                         // Restrict by church for non-admins
-                        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                        if (!isSystemViewer(req)) {
                             query.church = req.activeChurch._id;
                         }
                     
@@ -177,7 +178,7 @@ const updateWelfareDisbursement = async (req, res) => {
         const query = {_id: id}
 
         
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if(!isSystemViewer(req)) {
             query.church = req.activeChurch._id
         }
 
@@ -236,7 +237,7 @@ const deleteWelfareDisbursement = async (req, res) => {
         const {id} = req.params
         const query = {_id: id}
 
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if(!isSystemViewer(req)) {
             query.church = req.activeChurch._id
         }
 
@@ -265,7 +266,7 @@ const downloadWelfareDisbursementReceipt = async (req, res) => {
         const { id } = req.params;
         const query = { _id: id };
 
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if (!isSystemViewer(req)) {
             query.church = req.activeChurch._id;
         }
 

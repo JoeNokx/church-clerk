@@ -406,12 +406,12 @@ export const globalSearch = async (req, res) => {
     }
 
     // Member Care — confidential cases stay invisible to anyone but
-    // churchadmin / superadmin, same rule as the module endpoints.
+    // churchclerkadmin / superadmin, same rule as the module endpoints.
     if (can(perms, "memberCare")) {
       const caseFilter = { ...base, $or: [{ title: regex }, { category: regex }, { referenceId: regex }] };
       const canConfidential =
         perms.super === true ||
-        ["churchadmin", "superadmin"].includes(String(req.user?.role || "").trim().toLowerCase());
+        ["churchclerkadmin", "superadmin"].includes(String(req.user?.role || "").trim().toLowerCase());
       if (!canConfidential) caseFilter.confidential = { $ne: true };
       tasks.push(
         CareCase.find(caseFilter)

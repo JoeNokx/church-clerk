@@ -13,7 +13,7 @@ const giles = {
   "email": "giles@example.com",
   "phoneNumber": "05434225643",
   "password": "giless0012345",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchName": "God is our Light Church"
 }
 
@@ -22,7 +22,7 @@ const edward = {
   "email": "edward@example.com",
   "phoneNumber": "05435125643",
   "password": "edward0012345",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchName": "Kingdom Labourers Ministry"
 }
 
@@ -39,7 +39,7 @@ const binnah =  {
   "email": "joseph@example.com",
   "phoneNumber": "05035125643",
   "password": "joeseph0012345",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchName": "Grace Connect"
 }
 
@@ -82,7 +82,7 @@ const getSingleMember = async (req, res) => {
     const memberId = req.params.id;
     const query = { _id: memberId };
 
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.user.church;
     }
 
@@ -201,13 +201,14 @@ export const sanitizeUpdate = (body, fields = []) => {
 };
 
 import { sanitizeUpdate } from "../utils/sanitizeUpdate.js";
+import { isSystemViewer } from "../utils/resolvePermissions.js";
 
 const updateGroupAttendance = async (req, res) => {
   try {
     const { id } = req.params;
 
     const query = { _id: id };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.user.church;
     }
 

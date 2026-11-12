@@ -1,5 +1,4 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import PermissionContext from "../../permissions/permission.store.js";
 import {
   getVisitorFollowUps,
   createVisitorFollowUp,
@@ -158,9 +157,7 @@ export function VisitorFollowUpForm({ visitor, followUp = null, onClose, onSaved
  * modal. Creating is done from the visitor row's ⋮ menu.
  */
 export default function VisitorFollowUps({ visitorId }) {
-  const { can } = useContext(PermissionContext) || {};
   const guarded = useGuardedAction();
-  const canWrite = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
 
   const [followUps, setFollowUps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -242,8 +239,8 @@ export default function VisitorFollowUps({ visitorId }) {
                   <td className="py-2 text-right whitespace-nowrap px-3">
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => setViewing(fu) },
-                      canWrite && { label: "Edit", onClick: () => guarded(() => setEditing(fu)) },
-                      canWrite && fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => handleDelete(fu)), danger: true },
+                      { label: "Edit", onClick: () => guarded(() => setEditing(fu), "visitors", "update") },
+                      fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => handleDelete(fu), "visitors", "delete"), danger: true },
                     ]} />
                   </td>
                 </tr>

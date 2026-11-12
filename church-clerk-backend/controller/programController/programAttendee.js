@@ -5,6 +5,7 @@ import Member from "../../models/memberModel.js";
 import Visitor from "../../models/visitorsModel.js";
 
 import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 // A program guest is also a church visitor — find-or-create by phone so the
 // same person isn't tracked twice (follow-ups, future visits, member search).
@@ -37,7 +38,7 @@ const createProgramAttendee = async (req, res) => {
     }
 
     const query = { _id: programId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -98,7 +99,7 @@ const getProgramAttendees = async(req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const programQuery = { _id: programId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       programQuery.church = req.activeChurch._id;
     }
 
@@ -180,7 +181,7 @@ const updateProgramAttendee = async (req, res) => {
     const { programId, attendeeId } = req.params;
 
     const programQuery = { _id: programId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       programQuery.church = req.activeChurch._id;
     }
 
@@ -227,7 +228,7 @@ const deleteProgramAttendee = async (req, res) => {
     const { programId, attendeeId } = req.params;
 
     const programQuery = { _id: programId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       programQuery.church = req.activeChurch._id;
     }
 
@@ -470,7 +471,7 @@ const ensureGuestVisitor = async (req, res) => {
   try {
     const { programId, attendeeId } = req.params;
     const programQuery = { _id: programId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") programQuery.church = req.activeChurch._id;
+    if (!isSystemViewer(req)) programQuery.church = req.activeChurch._id;
     const program = await Program.findOne(programQuery);
     if (!program) return res.status(404).json({ message: "Program not found." });
 

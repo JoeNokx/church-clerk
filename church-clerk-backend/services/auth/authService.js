@@ -8,6 +8,7 @@ import { sendRegistrationVerificationEmail } from "./emailVerificationService.js
 import { logActivity } from "../../utils/activityLogger.js";
 import { getClientIp, parseUserAgentMeta } from "../../utils/requestHelpers.js";
 import { linkUserToMatchingMember } from "../../utils/memberUserLink.js";
+import { isSystemRole } from "../../utils/resolvePermissions.js";
 
 async function registerUser(data, req) {
   const { fullName, email, phoneNumber, password, churchId } = data;
@@ -93,7 +94,7 @@ async function registerUser(data, req) {
   }
 
   let church = null;
-  let resolvedRole = "churchadmin";
+  let resolvedRole = "churchclerkadmin";
 
   if (churchId) {
     const nextChurch = await Church.findById(churchId).lean();
@@ -104,7 +105,7 @@ async function registerUser(data, req) {
     const existingChurchUsers = await User.countDocuments({ church: nextChurch._id });
     if (existingChurchUsers === 0) {
       church = nextChurch._id;
-      resolvedRole = "churchadmin";
+      resolvedRole = "churchclerkadmin";
     } else {
       throw new Error("Users can only be added by a church admin");
     }
@@ -202,7 +203,7 @@ async function loginUser(email, password, rememberMe, req) {
     throw new Error("email or password incorrect.");
   }
 
-  if (user.role === "superadmin" || user.role === "supportadmin") {
+  if (await isSystemRole(user.role)) {
     throw new Error("Please log in via the admin portal");
   }
 

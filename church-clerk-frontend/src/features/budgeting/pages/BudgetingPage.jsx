@@ -5,6 +5,7 @@ import BudgetingContext, { BudgetingProvider } from "../budgeting.store.js";
 import BudgetingFilters from "../components/BudgetingFilters.jsx";
 import BudgetingForm from "../components/BudgetingForm.jsx";
 import BudgetingTable from "../components/BudgetingTable.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function BudgetingPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -14,6 +15,7 @@ function BudgetingPageInner() {
   const [editing, setEditing] = useState(null);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("budgeting", "create") : false), [can]);
+  const guarded = useGuardedAction();
 
   const load = useCallback(async () => {
     await store?.fetchBudgets?.();
@@ -48,16 +50,14 @@ function BudgetingPageInner() {
         </div>
 
         <div className="flex items-center gap-3">
-          {canCreate ? (
-            <button
+          {(<button
               type="button"
-              onClick={openCreate}
+              onClick={() => guarded(openCreate, "budgeting", "create")}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               <span className="leading-none text-lg">+</span>
               New Budget
-            </button>
-          ) : null}
+            </button>)}
         </div>
       </div>
 

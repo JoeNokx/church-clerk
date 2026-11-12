@@ -21,15 +21,15 @@ const SERVICE_TYPES = [
   "Sunday Service",
   "Sunday First Service",
   "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
   "Worship Service",
   "Bible Study",
   "Children Service",
   "Midweek Service",
   "Prayer Meeting",
-  "Special Program"
+  "Special Program",
+  "cells Meeting",
+  "groups Meeting",
+  "department Meeting"
 ];
 
 // scope: { churchProject: id } or { event: id } — determines what the pledge is attached to.
@@ -50,7 +50,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+  const serviceTypeOptions = [...new Set([...(lookupServiceTypes || []), ...SERVICE_TYPES])];
 
   const debouncedPersonQuery = useDebouncedValue(personQuery, 300);
 

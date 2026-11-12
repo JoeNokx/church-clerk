@@ -116,9 +116,9 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
       ? "Record your first expense to start tracking church spending."
       : "We couldn't find any expenses matching your current filters or date range.";
 
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
     const actionLabel = showAdd ? "Add Expense" : recovery?.actionLabel;
-    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate, "expenses", "create") : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -166,7 +166,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }) }
+                    { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }, "expenses", "update") }
                   ]} />
                 </td>
               </tr>

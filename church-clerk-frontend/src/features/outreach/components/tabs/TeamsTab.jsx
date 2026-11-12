@@ -263,6 +263,7 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
 
 // ── Team Card ─────────────────────────────────────────────────────
 function TeamCard({ team, outreachCount, onEdit, onDelete, onViewDetails, canWrite, canDelete }) {
+  const guarded = useGuardedAction();
   const memberCount = team.members?.length || 0;
   const oCount = typeof outreachCount === "number" ? outreachCount : 0;
 
@@ -284,13 +285,11 @@ function TeamCard({ team, outreachCount, onEdit, onDelete, onViewDetails, canWri
         badgeClass={TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}
         actions={
           <>
-            {canWrite ? (
-              <button onClick={() => onEdit(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            {(<button onClick={() => guarded(() => onEdit(team), "outreach", "update")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              </button>
-            ) : null}
-            {canDelete && team?.canDelete !== false ? (
-              <button onClick={() => onDelete(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              </button>)}
+            {team?.canDelete !== false ? (
+              <button onClick={() => guarded(() => onDelete(team), "outreach", "delete")} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ) : null}
@@ -597,15 +596,14 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
 
   useEffect(() => {
     if (!setHeaderAction) return;
-    if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => guarded(() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         Create Team
       </button>
     );
     return () => setHeaderAction(null);
-  }, [canCreate, setHeaderAction, guarded]);
+  }, [setHeaderAction, guarded]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -660,8 +658,8 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
               illustration={search ? "search" : "teams"}
               title={search ? "No teams found" : "No outreach teams yet"}
               description={search ? "We couldn't find any teams matching your search." : "Create a team and add members to it."}
-              actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
-              onAction={search ? () => handleSearchChange("") : (canCreate ? () => guarded(() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }) : undefined)}
+              actionLabel={search ? "Clear Search" : "Create Team"}
+              onAction={search ? () => handleSearchChange("") : () => guarded(() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")}
             />
           </div>
         ) : (

@@ -8,9 +8,8 @@ import { getOfferings } from "../services/offering.api.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
-  "First Sunday Service",
-  "Second Sunday Service",
-  "Third Sunday Service",
+  "Sunday First Service",
+  "Sunday Second Service",
   "Worship Service",
   "Bible Study",
   "Special Program",
@@ -26,7 +25,10 @@ function OfferingFilters() {
   const store = useContext(OfferingContext);
 
   const { values: lookupServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+  const serviceTypeOptions = useMemo(
+    () => [...new Set([...(lookupServiceTypes || []), ...SERVICE_TYPES])],
+    [lookupServiceTypes]
+  );
 
   const [recordedByValue, setRecordedByValue] = useState(store?.filters?.recordedBy || "");
 

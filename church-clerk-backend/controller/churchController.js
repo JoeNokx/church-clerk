@@ -13,6 +13,7 @@ import { buildPaginationParams, buildPaginationResponse } from "../utils/paginat
 import { buildSearchQuery } from "../utils/searchHelper.js";
 import { handleReferralCode, assignUserRole, createReferralCodeForChurch } from "../services/church/churchCreationService.js";
 import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances, getBranchPerformance } from "../services/church/branchService.js";
+import { isSystemViewer } from "../utils/resolvePermissions.js";
 
 const createMyChurch = async (req, res) => {
   try {
@@ -235,7 +236,7 @@ const getMyChurchProfile = async (req, res) => {
     const query = {};
 
     //  Only superadmin and supportadmin can choose which church to view
-    if (req.user.role === "superadmin" || req.user.role === "supportadmin") {
+    if (isSystemViewer(req)) {
       if (!req.params.id) {
         return res.status(400).json({ message: "Church ID is required" });
       }
@@ -292,7 +293,7 @@ const updateMyChurchProfile = async (req, res) => {
     // Build query based on role
     let query = {};
 
-    if (req.user.role === "superadmin" || req.user.role === "supportadmin") {
+    if (isSystemViewer(req)) {
       if (!id) {
         return res.status(400).json({ message: "Church ID is required" });
       }

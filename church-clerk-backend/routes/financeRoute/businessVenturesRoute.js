@@ -26,7 +26,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "read"),
   searchMembersForBusinessVenture
 );
@@ -37,7 +37,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "create"),
   backdatingGuard({ dateField: "startDate", module: "business", entityType: "businessVenture" }),
   createBusinessVentures
@@ -48,7 +48,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "read"),
   getAllBusinessVentures
 );
@@ -58,8 +58,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   getSingleBusinessVentures
 ); 
 router.put(
@@ -68,7 +68,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   conditionalImmutableGuard(),
   updateBusinessVentures
@@ -80,7 +80,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   async (req, res) => {
     try {
@@ -91,6 +91,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "business",
         entityType: "businessVenture",
@@ -112,7 +114,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "read"),
   getAllBusinessKPI
 );
@@ -124,7 +126,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "create"),
   uploadReceipt,
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessIncome" }),
@@ -136,8 +138,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   getAllBusinessIncome
 );
 router.put(
@@ -146,7 +148,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   uploadReceipt,
   conditionalImmutableGuard(),
@@ -159,8 +161,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   downloadBusinessIncomeReceipt
 );
 
@@ -170,7 +172,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   async (req, res) => {
     try {
@@ -181,6 +183,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "business",
         entityType: "businessIncome",
@@ -203,7 +207,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "create"),
   uploadReceipt,
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessExpense" }),
@@ -215,8 +219,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   getAllBusinessExpenses
 );
 router.put(
@@ -225,7 +229,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   uploadReceipt,
   conditionalImmutableGuard(),
@@ -238,8 +242,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   downloadBusinessExpenseReceipt
 );
 
@@ -249,7 +253,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("businessVentures", "update"),
   async (req, res) => {
     try {
@@ -260,6 +264,8 @@ router.post(
       const { patch, reason, impactLevel } = req.body || {};
       const result = await createAdjustment({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId,
         module: "business",
         entityType: "businessExpense",
@@ -282,8 +288,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("businessVentures", "read"),
   getIncomeExpensesKPI
 );
 

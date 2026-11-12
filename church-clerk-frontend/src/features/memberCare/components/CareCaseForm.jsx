@@ -6,6 +6,7 @@ import { MemberSelect, MemberMultiSelect } from "./MemberSelect.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import { showError } from "../../../utils/toast.js";
 import { CASE_CATEGORIES, CASE_PRIORITIES, CASE_STATUSES, CASE_SOURCES, VISIT_TYPES, memberName } from "../constants.js";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const inputClass =
   "mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm";
@@ -13,6 +14,7 @@ const labelClass = "block font-semibold text-gray-500 text-xs";
 
 function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(MemberCareContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("memberCare", "create") : false), [can]);
@@ -101,10 +103,10 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.updateCase?.(initialData?._id, { ...payload, status });
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         const res = await store?.createCase?.({ ...payload, memberId: member._id });
 
         // A visit date means the case was opened during a visit — log it

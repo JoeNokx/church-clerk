@@ -3,6 +3,7 @@ import IndividualAttendance from "../../models/organisationModel/groupIndividual
 import Group from "../../models/organisationModel/groupModel.js";
 import GroupMember from "../../models/organisationModel/groupMembersModel.js";
 import { annotateDeletable } from "../../services/recordDependencyService.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 const MEMBER_FIELDS = "firstName lastName phoneNumber email streetAddress city";
 
@@ -19,7 +20,7 @@ const createGroupIndividualAttendance = async (req, res) => {
     }
 
     const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -67,7 +68,7 @@ const getAllGroupIndividualAttendances = async (req, res) => {
     const churchId = req.activeChurch?._id || req.user?.church;
 
     const query = { group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = churchId;
     }
 
@@ -130,7 +131,7 @@ const getSingleGroupIndividualAttendance = async (req, res) => {
     const { groupId, attendanceId } = req.params;
 
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -164,7 +165,7 @@ const updateGroupIndividualAttendance = async (req, res) => {
     const { date, serviceType, presentMembers, absentMembers, mainSpeaker, expectedCount } = req.body;
 
     const groupQuery = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       groupQuery.church = req.activeChurch._id;
     }
 
@@ -192,7 +193,7 @@ const updateGroupIndividualAttendance = async (req, res) => {
     if (serviceType !== undefined) update.serviceType = String(serviceType || "").trim();
 
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -217,7 +218,7 @@ const deleteGroupIndividualAttendance = async (req, res) => {
     const { groupId, attendanceId } = req.params;
 
     const groupQuery = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       groupQuery.church = req.activeChurch._id;
     }
 
@@ -227,7 +228,7 @@ const deleteGroupIndividualAttendance = async (req, res) => {
     }
 
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -246,7 +247,7 @@ const getGroupCheckInLinkStatus = async (req, res) => {
   try {
     const { groupId, attendanceId } = req.params;
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
     const attendance = await IndividualAttendance.findOne(query)
@@ -268,7 +269,7 @@ const generateGroupCheckInLink = async (req, res) => {
   try {
     const { groupId, attendanceId } = req.params;
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
     const token = crypto.randomBytes(24).toString("hex");
@@ -290,7 +291,7 @@ const revokeGroupCheckInLink = async (req, res) => {
   try {
     const { groupId, attendanceId } = req.params;
     const query = { _id: attendanceId, group: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
     const attendance = await IndividualAttendance.findOneAndUpdate(

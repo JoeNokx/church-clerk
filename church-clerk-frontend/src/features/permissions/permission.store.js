@@ -22,7 +22,7 @@ export function PermissionProvider({ children }) {
 
     if (permissions.super === true) return true;
 
-    const isWriteAction = action === "create" || action === "update" || action === "delete";
+    const isWriteAction = action === "create" || action === "update" || action === "delete" || action === "approve";
     if (isWriteAction) {
       const activeFlag = typeof window !== "undefined" ? localStorage.getItem("userIsActive") : "1";
       if (activeFlag === "0") {

@@ -1,5 +1,4 @@
-import { enforceBackdating, createAdjustment } from "../services/finance/governanceService.js";
-import { getSystemSettingsSnapshot } from "../controller/systemSettingsController.js";
+import { enforceBackdating, createAdjustment, getChurchGovernanceFlags } from "../services/finance/governanceService.js";
 
 // Not wired to routes yet. To be applied per module when frontend is ready.
 // backdatingGuard expects req.body[dateField] and optionally req.body.reason
@@ -10,6 +9,8 @@ export function backdatingGuard({ dateField, module, entityType }) {
       const reason = req.body?.reason || req.body?.backdateReason;
       const result = await enforceBackdating({
         user: req.user,
+        permissions: req.permissions,
+        church: req.activeChurch,
         churchId: req.activeChurch?._id,
         module,
         entityType,
@@ -42,15 +43,18 @@ export function immutableGuard() {
   };
 }
 
-// Conditional wrapper: only blocks when enforceImmutability flag is ON.
-// Superadmin and churchadmin are exempt — they can always edit directly.
+// Conditional wrapper: only blocks when the active church has enforceImmutability
+// ON (per-church preference, defaults ON). Roles granted
+// financeGovernance.override (and superadmins) are exempt — they can always
+// edit directly.
 export function conditionalImmutableGuard() {
   return async (req, res, next) => {
     try {
-      const flags = await getSystemSettingsSnapshot();
+      const flags = getChurchGovernanceFlags(req.activeChurch);
       if (!flags.enforceImmutability) return next();
+      const perms = req.permissions || {};
       const role = String(req.user?.role || "").toLowerCase();
-      if (role === "superadmin" || role === "churchadmin") return next();
+      if (perms.super || perms?.financeGovernance?.override || role === "superadmin") return next();
       return res.status(405).json({ message: IMMUTABLE_MSG, status: "REJECTED" });
     } catch (error) {
       return res.status(500).json({ message: error.message });

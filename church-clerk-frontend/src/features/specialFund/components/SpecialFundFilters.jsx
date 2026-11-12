@@ -20,7 +20,10 @@ function SpecialFundFilters() {
   const store = useContext(SpecialFundContext);
 
   const { values: lookupCategories } = useLookupValues("specialFundCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = useMemo(
+    () => [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])],
+    [lookupCategories]
+  );
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 

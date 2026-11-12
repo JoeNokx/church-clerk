@@ -10,6 +10,7 @@ import {
   createOpeningBalance,
   updateOpeningBalance
 } from "../services/financialStatement.api.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const INPUT_CLS =
   "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200";
@@ -56,6 +57,7 @@ export default function OpeningBalanceContent({ formOpen, setFormOpen }) {
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const money = useMemo(() => (v) => formatMoney(v || 0, currency), [currency]);
 
+  const guarded = useGuardedAction();
   const canUpdate = useMemo(
     () => (typeof can === "function" ? can("offerings", "update") : false),
     [can]
@@ -130,7 +132,8 @@ export default function OpeningBalanceContent({ formOpen, setFormOpen }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (saving || !canUpdate) return;
+    if (saving) return;
+    if (!canUpdate) { guarded(undefined, "offerings", "update"); return; }
     setError("");
 
     if (!form.accountName.trim()) return setError("Account name is required.");
@@ -230,8 +233,8 @@ export default function OpeningBalanceContent({ formOpen, setFormOpen }) {
               illustration="offering"
               title="No opening balances yet"
               description="Opening balance is the money your church already had before you started recording it here. Add it so your reports show the full picture."
-              actionLabel={canUpdate ? "Add Open Balance" : undefined}
-              onAction={canUpdate ? openCreate : undefined}
+              actionLabel="Add Open Balance"
+              onAction={() => guarded(openCreate, "offerings", "update")}
             />
           </div>
         ) : (
@@ -273,15 +276,13 @@ export default function OpeningBalanceContent({ formOpen, setFormOpen }) {
                           >
                             View
                           </button>
-                          {canUpdate ? (
-                            <button
+                          {(<button
                               type="button"
-                              onClick={() => openEdit(a)}
+                              onClick={() => guarded(() => openEdit(a), "offerings", "update")}
                               className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               Edit
-                            </button>
-                          ) : null}
+                            </button>)}
                         </div>
                       </td>
                     </tr>
@@ -471,7 +472,7 @@ export default function OpeningBalanceContent({ formOpen, setFormOpen }) {
                   loading={saving}
                   loadingText="Saving..."
                   className="rounded-lg px-4 py-2 shadow-sm text-sm"
-                  disabled={!canUpdate || !form.confirmed}
+                  disabled={!form.confirmed}
                 >
                   {editing ? "Save Changes" : "Save Open Balance"}
                 </Button>

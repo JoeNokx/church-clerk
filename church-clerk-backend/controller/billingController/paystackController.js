@@ -67,7 +67,7 @@ export const chargeWithPaystack = async (subscription) => {
     email = String(church?.email || "").trim();
   }
   if (!email) {
-    const adminUser = await User.findOne({ church: subscription.church, role: "churchadmin" }).select("email").lean();
+    const adminUser = await User.findOne({ church: subscription.church, role: "churchclerkadmin" }).select("email").lean();
     email = String(adminUser?.email || "").trim();
   }
   if (!email) {

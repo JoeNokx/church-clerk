@@ -25,9 +25,10 @@ import Button from "../../../shared/components/Button/index.jsx";
 import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { isDelegateSession } from "../../../shared/utils/delegateSession.js";
 import { showSuccess } from "../../../utils/toast.js";
 import ApprovalsTab from "../../governance/pages/ApprovalsPage.jsx";
-import { getApprovals } from "../../governance/services/governance.api.js";
+import { getApprovals, getGovernanceFlags, updateGovernanceFlags } from "../../governance/services/governance.api.js";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -35,10 +36,14 @@ import {
   updateChurchUser,
   setChurchUserStatus,
   canCreateChurchUser,
+  createChurchCustomRole,
+  listChurchCustomRoles,
+  updateChurchCustomRole,
   getGovernanceFlagsSnapshot,
   toggleGovernanceFlags
 } from "../services/settings.api.js";
 import { getMembers } from "../../member/services/member.api.js";
+import { roleLabel, normalizeRoleKey } from "../../../config/roles.js";
 
 const humanizeKey = (key) => {
   const raw = String(key || "").trim();
@@ -126,13 +131,22 @@ function SettingsPage() {
     () => (typeof can === "function" ? can("settingsUsersRoles", "deactivate") : false),
     [can]
   );
-  // Only churchadmin (and system admins) may add or deactivate users.
-  const canManageUsers = useMemo(
-    () => ["churchadmin", "superadmin", "supportadmin"].includes(String(user?.role || "").toLowerCase()),
-    [user?.role]
+  const canCreateUsersRoles = useMemo(
+    () => (typeof can === "function" ? can("settingsUsersRoles", "create") : false),
+    [can]
   );
+  const canUpdateUsersRoles = useMemo(
+    () => (typeof can === "function" ? can("settingsUsersRoles", "update") : false),
+    [can]
+  );
+  const canManageUsers = useMemo(
+    () => canUpdateUsersRoles || canDeactivateUsers,
+    [canUpdateUsersRoles, canDeactivateUsers]
+  );
+  const canManageRoles = canManageUsers;
 
   const [tab, setTab] = useState("my-profile");
+  const [usersRolesTab, setUsersRolesTab] = useState("users");
 
   const [myProfileLoading, setMyProfileLoading] = useState(false);
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
@@ -169,6 +183,11 @@ function SettingsPage() {
   const [titheModeSwitching, setTitheModeSwitching] = useState(false);
   const [titheModeError, setTitheModeError] = useState("");
   const [titheModeSuccess, setTitheModeSuccess] = useState("");
+  // Per-church financial governance rules (Configure tab). Both default ON.
+  const [govFlags, setGovFlags] = useState({ enforceBackdating: true, enforceImmutability: true });
+  const [govFlagsLoading, setGovFlagsLoading] = useState(false);
+  const [govFlagsError, setGovFlagsError] = useState("");
+  const [govFlagsSuccess, setGovFlagsSuccess] = useState("");
   const [titheModeConfirm, setTitheModeConfirm] = useState(null);
 
   const isUserActive = useMemo(() => {
@@ -176,16 +195,56 @@ function SettingsPage() {
     return localStorage.getItem("userIsActive") !== "0";
   }, []);
 
+  // Any system-scope account (no home church) sees the system admin section —
+  // not just the old built-in role names. Delegates stay in church view.
   const isSystemAdmin = useMemo(() => {
-    const raw = String(user?.role || "").trim().toLowerCase();
-    const norm = raw.replace(/[\s_\-]+/g, "");
-    return norm === "superadmin" || norm === "supportadmin";
-  }, [user?.role]);
+    if (isDelegateSession()) return false;
+    return !user?.church;
+  }, [user?.church]);
 
-  const canSeeApprovals = useMemo(() => {
-    const raw = String(user?.role || "").trim().toLowerCase();
-    return raw === "superadmin" || raw === "churchadmin";
-  }, [user?.role]);
+  const canSeeApprovals = useMemo(
+    () => (typeof can === "function" ? can("financeGovernance", "read") : false),
+    [can]
+  );
+  const canUpdateGovFlags = useMemo(
+    () => (typeof can === "function" ? can("financeGovernance", "update") : false),
+    [can]
+  );
+
+  useEffect(() => {
+    if (tab !== "configure" || !canSeeApprovals) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getGovernanceFlags();
+        if (!cancelled && res?.data) {
+          setGovFlags({
+            enforceBackdating: res.data.enforceBackdating !== false,
+            enforceImmutability: res.data.enforceImmutability !== false
+          });
+        }
+      } catch { /* card shows defaults; toggle surfaces errors */ }
+    })();
+    return () => { cancelled = true; };
+  }, [tab, canSeeApprovals]);
+
+  const onToggleGovFlag = async (key, value) => {
+    const prev = govFlags;
+    setGovFlags((f) => ({ ...f, [key]: value }));
+    setGovFlagsError("");
+    setGovFlagsSuccess("");
+    setGovFlagsLoading(true);
+    try {
+      const res = await updateGovernanceFlags({ [key]: value });
+      if (res?.data) setGovFlags((f) => ({ ...f, ...res.data }));
+      setGovFlagsSuccess("Governance settings saved.");
+    } catch (e) {
+      setGovFlags(prev);
+      setGovFlagsError(e?.response?.data?.message || e?.message || "Failed to update governance settings");
+    } finally {
+      setGovFlagsLoading(false);
+    }
+  };
 
   const { data: pendingApprovalsCount = 0 } = useQuery({
     queryKey: ["church-governance", "PENDING_APPROVAL", "settings-tab-count"],
@@ -217,6 +276,12 @@ function SettingsPage() {
     }
     if (requestedTab === "users") {
       setTab("users");
+      setUsersRolesTab("users");
+      return;
+    }
+    if (requestedTab === "roles") {
+      setTab("users");
+      setUsersRolesTab("roles");
       return;
     }
     if (requestedTab === "audit") {
@@ -580,7 +645,7 @@ function SettingsPage() {
 
   const handleRequestSenderId = async () => {
     if (!activeChurch?._id) return;
-    if (!canWrite) return;
+    if (!canWrite) { guarded(undefined, "settings", "update"); return; }
 
     setSenderIdLoading(true);
     setSenderIdError("");
@@ -869,10 +934,38 @@ function SettingsPage() {
   const [rolesError, setRolesError] = useState("");
   const [roleConfig, setRoleConfig] = useState(null);
 
+  // Custom role creation (ChurchClerk admin only)
+  const [createRoleOpen, setCreateRoleOpen] = useState(false);
+  const [createRoleName, setCreateRoleName] = useState("");
+  const [createRoleKey, setCreateRoleKey] = useState("");
+  const [createRolePermissions, setCreateRolePermissions] = useState({});
+  const [createRoleAllAccess, setCreateRoleAllAccess] = useState(false);
+  const [createRoleSaving, setCreateRoleSaving] = useState(false);
+  const [createRoleError, setCreateRoleError] = useState("");
+
+  // Roles table + custom-role management
+  const [churchRolesList, setChurchRolesList] = useState([]);
+  const [editRoleTarget, setEditRoleTarget] = useState(null);
+  const [editRoleName, setEditRoleName] = useState("");
+  const [editRoleSaving, setEditRoleSaving] = useState(false);
+  const [editRoleError, setEditRoleError] = useState("");
+  const [permRoleTarget, setPermRoleTarget] = useState(null);
+  const [permRoleMatrix, setPermRoleMatrix] = useState({});
+  const [permRoleAllAccess, setPermRoleAllAccess] = useState(false);
+  const [permRoleSaving, setPermRoleSaving] = useState(false);
+  const [permRoleError, setPermRoleError] = useState("");
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [roleActionSaving, setRoleActionSaving] = useState(false);
+  const [cannotDeactivateInfo, setCannotDeactivateInfo] = useState(null);
+
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState("");
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit, setUsersLimit] = useState(10);
+  const [rolesPage, setRolesPage] = useState(1);
+  const [rolesLimit, setRolesLimit] = useState(10);
   const [userRoleFilter, setUserRoleFilter] = useState("");
 
   const [auditLoading, setAuditLoading] = useState(false);
@@ -920,7 +1013,7 @@ function SettingsPage() {
   const [memberResults, setMemberResults] = useState([]);
   const [memberSearching, setMemberSearching] = useState(false);
   const [memberSearchOpen, setMemberSearchOpen] = useState(false);
-  const [addMode, setAddMode] = useState("manual");
+  const memberPickedRef = useRef(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [pickedMemberId, setPickedMemberId] = useState(null);
 
@@ -932,9 +1025,6 @@ function SettingsPage() {
   const [isSubmittingEditUser, setIsSubmittingEditUser] = useState(false);
   const [editError, setEditError] = useState("");
   const [editUser, setEditUser] = useState(null);
-  const [editFullName, setEditFullName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState("");
 
   // Governance flags state (System tab)
@@ -999,6 +1089,259 @@ function SettingsPage() {
     }
   };
 
+  // ── Custom role creation (same logic as the system admin create-role
+  // modal, but the scope is always "church") ──
+  const normalizeRoleKeyInput = (v) => String(v || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]/g, "");
+
+  const createRoleModules = useMemo(() => {
+    const modules = roleConfig?.modules;
+    if (!modules || typeof modules !== "object") return null;
+    const out = { ...modules };
+    // The legacy "settings" bucket is excluded from the permission catalog —
+    // the granular settings* sub-modules are what get assigned.
+    delete out.settings;
+    return out;
+  }, [roleConfig]);
+
+  const buildEmptyRoleMatrix = () => {
+    const out = {};
+    for (const moduleKey of Object.keys(createRoleModules || {})) {
+      out[moduleKey] = {};
+      for (const action of createRoleModules[moduleKey] || []) {
+        out[moduleKey][action] = false;
+      }
+    }
+    return out;
+  };
+
+  const setAllRoleMatrixValues = (matrix, value) => {
+    const out = matrix && typeof matrix === "object" ? { ...matrix } : {};
+    for (const moduleKey of Object.keys(out)) {
+      out[moduleKey] = { ...(out[moduleKey] || {}) };
+      for (const action of Object.keys(out[moduleKey] || {})) {
+        out[moduleKey][action] = Boolean(value);
+      }
+    }
+    return out;
+  };
+
+  const isAllRoleMatrixSelected = (matrix) => {
+    const m = matrix && typeof matrix === "object" ? matrix : {};
+    let hasAny = false;
+    for (const moduleKey of Object.keys(m)) {
+      for (const action of Object.keys(m[moduleKey] || {})) {
+        hasAny = true;
+        if (!m?.[moduleKey]?.[action]) return false;
+      }
+    }
+    return hasAny;
+  };
+
+  const renderRoleMatrix = (matrix, setMatrix, setAllAccess) => (
+    <div className="mt-5 rounded-xl border border-gray-200">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 font-semibold text-gray-900 text-sm">Permissions</div>
+      <div className="max-h-[50vh] overflow-y-auto p-4">
+        {!createRoleModules ? (
+          <div className="text-gray-600 text-sm">Permission catalog not loaded.</div>
+        ) : (
+          <div className="space-y-4">
+            {Object.keys(createRoleModules).map((moduleKey) => {
+              const actions = Array.isArray(createRoleModules[moduleKey]) ? createRoleModules[moduleKey] : [];
+              return (
+                <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
+                  <div className="font-semibold text-gray-900 text-sm">{humanizeKey(moduleKey)}</div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {actions.map((action) => (
+                      <label key={action} className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(matrix?.[moduleKey]?.[action])}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setMatrix((prev) => {
+                              const next = {
+                                ...(prev || {}),
+                                [moduleKey]: {
+                                  ...((prev || {})[moduleKey] || {}),
+                                  [action]: checked
+                                }
+                              };
+                              setAllAccess(isAllRoleMatrixSelected(next));
+                              return next;
+                            });
+                          }}
+                          className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
+                        />
+                        {action}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const openCreateRole = () => {
+    setCreateRoleName("");
+    setCreateRoleKey("");
+    setCreateRolePermissions(buildEmptyRoleMatrix());
+    setCreateRoleAllAccess(false);
+    setCreateRoleError("");
+    setCreateRoleOpen(true);
+  };
+
+  const onCreateRole = async () => {
+    setCreateRoleSaving(true);
+    setCreateRoleError("");
+    try {
+      const isAll = isAllRoleMatrixSelected(createRolePermissions);
+      await createChurchCustomRole({
+        name: createRoleName,
+        key: createRoleKey,
+        permissions: isAll ? { __all__: true } : createRolePermissions
+      });
+      setCreateRoleOpen(false);
+      await loadRoles();
+    } catch (e) {
+      setCreateRoleError(e?.response?.data?.message || e?.message || "Failed to create role");
+    } finally {
+      setCreateRoleSaving(false);
+    }
+  };
+
+  const loadRolesList = async () => {
+    try {
+      const res = await listChurchCustomRoles();
+      setChurchRolesList(Array.isArray(res?.data?.roles) ? res.data.roles : []);
+    } catch {
+      setChurchRolesList([]);
+    }
+  };
+
+  const refreshRoles = async () => {
+    await loadRolesList();
+    await loadRoles();
+  };
+
+  const roleTableRows = useMemo(() => {
+    const list = Array.isArray(churchRolesList) ? [...churchRolesList] : [];
+    return list.sort(
+      (a, b) =>
+        (a?.isBuiltin ? 1 : 0) - (b?.isBuiltin ? 1 : 0) ||
+        new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
+    );
+  }, [churchRolesList]);
+
+  const openEditRole = (role) => {
+    setEditRoleTarget(role);
+    setEditRoleName(role?.name || "");
+    setEditRoleError("");
+  };
+
+  const onSaveEditRole = async () => {
+    const name = String(editRoleName || "").trim();
+    if (!name || !editRoleTarget?._id) return;
+    setEditRoleSaving(true);
+    setEditRoleError("");
+    try {
+      await updateChurchCustomRole(editRoleTarget._id, { name });
+      setEditRoleTarget(null);
+      await refreshRoles();
+    } catch (e) {
+      setEditRoleError(e?.response?.data?.message || e?.message || "Failed to update role");
+    } finally {
+      setEditRoleSaving(false);
+    }
+  };
+
+  const openPermEdit = (role) => {
+    const matrix = buildEmptyRoleMatrix();
+    const stored = role?.permissions || {};
+    if (stored.__all__) {
+      setPermRoleMatrix(setAllRoleMatrixValues(matrix, true));
+      setPermRoleAllAccess(true);
+    } else {
+      for (const moduleKey of Object.keys(matrix)) {
+        const granted = stored[moduleKey];
+        for (const action of Object.keys(matrix[moduleKey] || {})) {
+          matrix[moduleKey][action] = Array.isArray(granted)
+            ? granted.includes(action)
+            : Boolean(granted?.[action]);
+        }
+      }
+      setPermRoleMatrix(matrix);
+      setPermRoleAllAccess(isAllRoleMatrixSelected(matrix));
+    }
+    setPermRoleError("");
+    setPermRoleTarget(role);
+  };
+
+  const onSavePermEdit = async () => {
+    if (!permRoleTarget?._id) return;
+    setPermRoleSaving(true);
+    setPermRoleError("");
+    try {
+      const isAll = isAllRoleMatrixSelected(permRoleMatrix);
+      await updateChurchCustomRole(permRoleTarget._id, {
+        permissions: isAll ? { __all__: true } : permRoleMatrix
+      });
+      setPermRoleTarget(null);
+      await refreshRoles();
+    } catch (e) {
+      setPermRoleError(e?.response?.data?.message || e?.message || "Failed to update permissions");
+    } finally {
+      setPermRoleSaving(false);
+    }
+  };
+
+  const onToggleRoleActive = (role) => {
+    if (role?.isActive !== false) {
+      if ((role?.userCount || 0) > 0) {
+        setCannotDeactivateInfo({ name: role?.name || role?.key, count: role.userCount });
+        return;
+      }
+      setDeactivateTarget(role);
+      return;
+    }
+    void (async () => {
+      try {
+        await updateChurchCustomRole(role._id, { isActive: true });
+        await refreshRoles();
+      } catch (e) {
+        setRolesError(e?.response?.data?.message || e?.message || "Failed to activate role");
+      }
+    })();
+  };
+
+  const confirmDeactivateRole = async () => {
+    if (!deactivateTarget?._id) return;
+    setRoleActionSaving(true);
+    try {
+      await updateChurchCustomRole(deactivateTarget._id, { isActive: false });
+      setDeactivateTarget(null);
+      await refreshRoles();
+    } catch (e) {
+      const count = e?.response?.data?.assignedUsers;
+      const name = deactivateTarget?.name || deactivateTarget?.key;
+      setDeactivateTarget(null);
+      if (e?.response?.status === 409) {
+        setCannotDeactivateInfo({ name, count });
+      } else {
+        setRolesError(e?.response?.data?.message || e?.message || "Failed to deactivate role");
+      }
+    } finally {
+      setRoleActionSaving(false);
+    }
+  };
+
   const loadUsers = async ({ search, role } = {}) => {
     setUsersLoading(true);
     setUsersError("");
@@ -1019,6 +1362,7 @@ function SettingsPage() {
     if (tab !== "users") return;
 
     loadRoles();
+    loadRolesList();
     loadUsers({});
   }, [canRead, tab]);
 
@@ -1026,6 +1370,7 @@ function SettingsPage() {
     if (!canRead) return;
     if (tab !== "users") return;
 
+    setUsersPage(1);
     const t = setTimeout(() => {
       loadUsers({ search: userSearch, role: userRoleFilter });
     }, 250);
@@ -1193,7 +1538,7 @@ function SettingsPage() {
   // Debounced member search inside the Add User modal — lets admins link a
   // user to an existing church member and autofill their details.
   useEffect(() => {
-    if (!addOpen || !String(memberSearch).trim()) {
+    if (!addOpen || memberPickedRef.current || !String(memberSearch).trim()) {
       setMemberResults([]);
       setMemberSearchOpen(false);
       return;
@@ -1216,48 +1561,15 @@ function SettingsPage() {
   }, [memberSearch, addOpen]);
 
   const pickMember = (m) => {
+    const fullName = [m?.firstName, m?.lastName].filter(Boolean).join(" ");
+    memberPickedRef.current = true;
     setPickedMemberId(m?._id || null);
-    setNewFullName([m?.firstName, m?.lastName].filter(Boolean).join(" "));
+    setNewFullName(fullName);
+    setMemberSearch(fullName);
     if (m?.email) setNewEmail(m.email);
     if (m?.phoneNumber) setNewPhone(m.phoneNumber);
-    setMemberSearch("");
     setMemberResults([]);
     setMemberSearchOpen(false);
-  };
-
-  // "Make Member" — link an existing unlinked member matching the user's
-  // phone/email, otherwise open the member form prefilled with their data.
-  const handleMakeMember = async (row) => {
-    try {
-      const findMatch = async (term) => {
-        const res = await getMembers({ search: term, limit: 50 });
-        const list = res?.data?.members ?? res?.data?.data?.members ?? [];
-        return (Array.isArray(list) ? list : []).find((m) => !m?.user && (
-          (row?.phoneNumber && String(m?.phoneNumber) === String(row.phoneNumber)) ||
-          (row?.email && String(m?.email || "").toLowerCase() === String(row.email).toLowerCase())
-        ));
-      };
-      const match = (row?.phoneNumber ? await findMatch(row.phoneNumber) : null) || (row?.email ? await findMatch(row.email) : null);
-      if (match) {
-        await updateChurchUser(row._id, { memberId: match._id });
-        showSuccess(`Linked to member ${match.memberId || match._id}.`);
-        loadUsers({});
-        return;
-      }
-      const parts = String(row?.fullName || "").trim().split(/\s+/).filter(Boolean);
-      const params = new URLSearchParams({
-        page: "member-form",
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" "),
-        email: row?.email || "",
-        phoneNumber: row?.phoneNumber || "",
-        linkUser: row._id,
-        returnTo: "/dashboard?page=settings&tab=users"
-      });
-      navigate(`/dashboard?${params.toString()}`);
-    } catch (e) {
-      showError(e?.response?.data?.message || e?.message || "Could not start member registration");
-    }
   };
 
   const openDeactivateConfirm = (row) => {
@@ -1302,7 +1614,7 @@ function SettingsPage() {
         setMemberSearch("");
         setMemberResults([]);
         setMemberSearchOpen(false);
-        setAddMode("manual");
+        memberPickedRef.current = false;
         setShowNewPassword(false);
         setPickedMemberId(null);
         setAddOpen(true);
@@ -1325,6 +1637,13 @@ function SettingsPage() {
     setAddLoading(true);
     setAddError("");
 
+    if (!pickedMemberId) {
+      setAddLoading(false);
+      setIsSubmittingUser(false);
+      setAddError("Search and pick a registered member to create a user account.");
+      return;
+    }
+
     if (!isValidPhoneNumber(newPhone)) {
       setAddLoading(false);
       setIsSubmittingUser(false);
@@ -1339,12 +1658,8 @@ function SettingsPage() {
         phoneNumber: newPhone,
         password: newPassword,
         role: newRole,
-        autoRegisterMember: addMode === "manual",
-        linkMemberId: addMode === "member" ? pickedMemberId : undefined
+        linkMemberId: pickedMemberId
       });
-      if (addMode === "manual" && res?.data?.member == null) {
-        showWarning("User created, but their member record couldn't be added — use Make Member to register them.");
-      }
 
       const created = res?.data?.user;
       if (created) {
@@ -1365,9 +1680,6 @@ function SettingsPage() {
   const handleOpenEdit = (row) => {
     setEditError("");
     setEditUser(row);
-    setEditFullName(row?.fullName || "");
-    setEditEmail(row?.email || "");
-    setEditPhone(row?.phoneNumber || "");
     setEditRole(row?.role || "");
     setEditOpen(true);
   };
@@ -1381,18 +1693,8 @@ function SettingsPage() {
     setEditLoading(true);
     setEditError("");
 
-    if (!isValidPhoneNumber(editPhone)) {
-      setEditLoading(false);
-      setIsSubmittingEditUser(false);
-      setEditError("Invalid phone number");
-      return;
-    }
-
     try {
       const res = await updateChurchUser(editUser._id, {
-        fullName: editFullName,
-        email: editEmail,
-        phoneNumber: editPhone,
         role: editRole,
       });
 
@@ -1410,16 +1712,21 @@ function SettingsPage() {
 
   const churchRoles = useMemo(() => {
     const list = roleConfig?.roleList?.churchRoles;
-    // associateadmin is a system role — not assignable to church users.
-    return (Array.isArray(list) ? list : []).filter((r) => String(r).toLowerCase() !== "associateadmin");
+    return Array.isArray(list) ? list : [];
   }, [roleConfig]);
 
-  const rolePermissions = roleConfig?.roles || {};
+  // ChurchClerk Admin is granted by the system at account creation — it can
+  // never be assigned to or changed on another user from the church side.
+  const assignableRoles = useMemo(
+    () => churchRoles.filter((r) => normalizeRoleKey(r) !== "churchclerkadmin"),
+    [churchRoles]
+  );
 
-  const availableRoleModules = useMemo(() => {
-    const modules = roleConfig?.modules;
-    if (!modules || typeof modules !== "object") return [];
-    return Object.keys(modules);
+  // Friendly display name for a role key — built-ins map to their label,
+  // custom roles keep the name stored on the role document.
+  const roleDisplay = useMemo(() => {
+    const names = roleConfig?.roleNames || {};
+    return (r) => names[String(r || "").trim().toLowerCase()] || roleLabel(r);
   }, [roleConfig]);
 
   if (!canRead) {
@@ -1839,7 +2146,7 @@ function SettingsPage() {
           {profileSuccess ? <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{profileSuccess}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveProfile(e)); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveProfile(e), "settings", "update"); }} className="space-y-4">
               <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
                 <div className="relative h-20 w-20 shrink-0">
                   {logoPreviewUrl ? (
@@ -1849,11 +2156,11 @@ function SettingsPage() {
                       <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-blue-300"><path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
                     </div>
                   )}
-                  {canWrite ? (
-                  <button type="button" onClick={() => guarded(() => logoInputRef.current?.click())} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50" title="Change logo">
+                  {( (
+                  <button type="button" onClick={() => guarded(() => logoInputRef.current?.click(), "settings", "update")} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50" title="Change logo">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-700"><path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
                   </button>
-                  ) : null}
+                  ) )}
                   <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 2 * 1024 * 1024) { setProfileError("Logo must be under 2 MB"); return; } setProfileError(""); const url = URL.createObjectURL(f); setLogoPreviewUrl(url); setLogoFile(f); }} />
                 </div>
                 <div>
@@ -1929,7 +2236,7 @@ function SettingsPage() {
                       {selectedBranches.map((b) => (
                         <span key={b._id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-blue-800 text-xs font-medium">
                           {b.name}
-                          <button type="button" disabled={!canWrite} onClick={() => setSelectedBranches((prev) => prev.filter((x) => x._id !== b._id))} className="ml-0.5 text-blue-500 hover:text-blue-700">✕</button>
+                          <button type="button" disabled={false} onClick={() => guarded(() => setSelectedBranches((prev) => prev.filter((x) => x._id !== b._id)), "settings", "update")} className="ml-0.5 text-blue-500 hover:text-blue-700">✕</button>
                         </span>
                       ))}
                     </div>
@@ -1965,14 +2272,14 @@ function SettingsPage() {
                                 <button
                                   key={c._id}
                                   type="button"
-                                  disabled={!canWrite || !!takenBy}
-                                  onClick={() => {
+                                  disabled={!!takenBy}
+                                  onClick={() => guarded(() => {
                                     if (takenBy) return;
                                     setSelectedBranches((prev) => [...prev, c]);
                                     setBranchSearch("");
                                     setBranchResults([]);
                                     setBranchDropdownOpen(false);
-                                  }}
+                                  }, "settings", "update")}
                                   className={`w-full text-left px-4 py-3 transition-colors ${takenBy ? "cursor-not-allowed bg-gray-50/70" : "hover:bg-gray-50"}`}
                                 >
                                   <div className={`font-semibold truncate text-sm ${takenBy ? "text-gray-400" : "text-gray-900"}`}>
@@ -2036,16 +2343,16 @@ function SettingsPage() {
                             <button
                               key={c?._id}
                               type="button"
-                              onClick={() => {
+                              onClick={() => guarded(() => {
                                 setParentChurchId(c?._id || "");
                                 setHeadquarterChurchId(c?._id || "");
                                 const location = `${c?.city || ""}${c?.region ? `, ${c.region}` : ""}`.trim();
                                 setHqSearch(c?.name ? `${c.name}${location ? ` (${location})` : ""}` : "");
                                 setHqDropdownOpen(false);
                                 setHqMessage("");
-                              }}
+                              }, "settings", "update")}
                               className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                              disabled={!canWrite}
+                              disabled={false}
                             >
                               <div className="font-semibold text-gray-900 truncate text-sm">{c?.name || "—"}</div>
                               <div className="mt-0.5 text-gray-600 truncate text-xs">
@@ -2238,7 +2545,6 @@ function SettingsPage() {
                 />
               </div>
 
-              {canWrite ? (
               <div className="flex justify-end">
                 <Button
                   type="submit"
@@ -2250,7 +2556,6 @@ function SettingsPage() {
                   Update Church Profile
                 </Button>
               </div>
-              ) : null}
             </form>
           </div>
         </div>
@@ -2261,69 +2566,55 @@ function SettingsPage() {
           {titheModeError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{titheModeError}</div> : null}
           {titheModeSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{titheModeSuccess}</div> : null}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-            <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 md:p-6">
               <div className="font-semibold text-gray-900 text-sm">Tithe Recording Mode</div>
-              <div className="mt-1 text-gray-500 text-xs">Choose how tithes are recorded. Your existing records will remain safe when switching.</div>
+              <div className="mt-1 text-gray-500 text-xs">Choose how tithes are recorded. Existing records stay safe when switching.</div>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <button
-                type="button"
-                onClick={() => guarded(() => handleSwitchTitheMode("individual"))}
-                disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
-                className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "individual" ? "border-blue-500 bg-blue-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="h-14 w-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              <div className="mt-4 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => guarded(() => handleSwitchTitheMode("individual"))}
+                  disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
+                  className={`w-full rounded-lg border px-4 py-3 text-left transition ${activeChurch?.titheRecordingMode === "individual" ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Individual Recording</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Record tithes by member name and track individual patterns.</div>
+                    </div>
+                    {activeChurch?.titheRecordingMode === "individual" ? (
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-blue-100 px-2.5 py-1 font-semibold text-blue-700 text-xs">Current</span>
+                    ) : null}
                   </div>
-                  <div className="mt-4 font-semibold text-blue-900 text-base">Individual Recording</div>
-                  <div className="mt-3 space-y-2 text-gray-600 text-sm">
-                    <div>Record by member name</div>
-                    <div>Track individual patterns</div>
-                    <div>Named tithe entries</div>
-                  </div>
-                  {canWrite || activeChurch?.titheRecordingMode === "individual" ? (
-                  <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "individual" ? "bg-blue-700" : "bg-blue-700"}`}>
-                    {activeChurch?.titheRecordingMode === "individual" ? "Current Mode" : "Switch to Individual"}
-                  </div>
-                  ) : null}
-                </div>
-              </button>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => guarded(() => handleSwitchTitheMode("aggregate"))}
-                disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
-                className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "aggregate" ? "border-green-500 bg-green-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="h-14 w-14 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.8" /></svg>
+                <button
+                  type="button"
+                  onClick={() => guarded(() => handleSwitchTitheMode("aggregate"))}
+                  disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
+                  className={`w-full rounded-lg border px-4 py-3 text-left transition ${activeChurch?.titheRecordingMode === "aggregate" ? "border-green-500 bg-green-50" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Aggregate Recording</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Record the total amount collected — no individual names.</div>
+                    </div>
+                    {activeChurch?.titheRecordingMode === "aggregate" ? (
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-green-100 px-2.5 py-1 font-semibold text-green-700 text-xs">Current</span>
+                    ) : null}
                   </div>
-                  <div className="mt-4 font-semibold text-blue-900 text-base">Aggregate Recording</div>
-                  <div className="mt-3 space-y-2 text-gray-600 text-sm">
-                    <div>Record total collected</div>
-                    <div>No individual names</div>
-                    <div>Bulk collection</div>
-                  </div>
-                  {canWrite || activeChurch?.titheRecordingMode === "aggregate" ? (
-                  <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "aggregate" ? "bg-green-700" : "bg-green-700"}`}>
-                    {activeChurch?.titheRecordingMode === "aggregate" ? "Current Mode" : "Switch to Aggregate"}
-                  </div>
-                  ) : null}
-                </div>
-              </button>
-            </div>
-
-            {!activeChurch?.titheRecordingMode ? (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
-                No tithe recording mode has been set yet. Choose a mode above to get started.
+                </button>
               </div>
-            ) : null}
+
+              {!activeChurch?.titheRecordingMode ? (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
+                  No tithe recording mode has been set yet. Choose a mode above to get started.
+                </div>
+              ) : null}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+            <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 md:p-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="font-semibold text-gray-900 text-sm">SMS Sender ID</div>
@@ -2335,7 +2626,7 @@ function SettingsPage() {
               {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{senderIdError}</div> : null}
               {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{senderIdSuccess}</div> : null}
 
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 flex flex-1 flex-col space-y-4">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                   <div className="font-semibold text-gray-500 text-xs">Requested Sender ID</div>
                   <div className="mt-1 font-semibold text-gray-900 text-sm">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
@@ -2346,7 +2637,7 @@ function SettingsPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="mt-auto">
                   <label className="block font-medium text-gray-700 mb-1 text-sm">New Sender ID</label>
                   <input
                     value={senderIdInput}
@@ -2354,21 +2645,21 @@ function SettingsPage() {
                     maxLength={11}
                     placeholder="e.g. MYCHURCH"
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                    disabled={!canWrite || senderIdLoading}
+                    disabled={senderIdLoading}
                   />
                   <div className="mt-1 text-gray-500 text-xs">
                     Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
                   </div>
 
-                  {canWrite ? (
+                  {( (
                   <div className="mt-3 flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={() => guarded(() => {
                         setSenderIdError("");
                         setSenderIdSuccess("");
                         setSenderIdInput("");
-                      }}
+                      }, "settings", "update")}
                       disabled={senderIdLoading}
                       className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                     >
@@ -2376,42 +2667,103 @@ function SettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => guarded(handleRequestSenderId)}
+                      onClick={() => guarded(handleRequestSenderId, "settings", "update")}
                       disabled={senderIdLoading || !String(senderIdInput || "").trim()}
                       className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                     >
                       {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
                     </button>
                   </div>
-                  ) : null}
+                  ) )}
                 </div>
               </div>
             </div>
+
+            {canSeeApprovals ? (
+            <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 md:p-6">
+              <div className="font-semibold text-gray-900 text-sm">Financial Governance</div>
+              <div className="mt-1 text-gray-500 text-xs">Control how strictly financial records are governed in your church. Applies to this church only.</div>
+
+              {govFlagsError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{govFlagsError}</div> : null}
+              {govFlagsSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{govFlagsSuccess}</div> : null}
+
+              <div className="mt-4 space-y-4">
+                <div className="rounded-lg border border-gray-200 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">Enforce Backdating Control</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Backdated entries older than 24 hours require approval.</div>
+                    </div>
+                    <label className="inline-flex shrink-0 items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={govFlags.enforceBackdating}
+                        onChange={(e) => guarded(() => onToggleGovFlag("enforceBackdating", e.target.checked))}
+                        disabled={govFlagsLoading}
+                        className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900 disabled:opacity-50"
+                      />
+                      {govFlags.enforceBackdating ? "On" : "Off"}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">Enforce Immutability</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Financial records can't be edited directly; changes go through the approval queue.</div>
+                    </div>
+                    <label className="inline-flex shrink-0 items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={govFlags.enforceImmutability}
+                        onChange={(e) => guarded(() => onToggleGovFlag("enforceImmutability", e.target.checked))}
+                        disabled={govFlagsLoading}
+                        className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900 disabled:opacity-50"
+                      />
+                      {govFlags.enforceImmutability ? "On" : "Off"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            ) : null}
           </div>
         </div>
       ) : null}
 
       {tab === "users" ? (
         <div className="mt-6">
-          {rolesError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{rolesError}</div> : null}
-          {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{usersError}</div> : null}
+          <PageTabs
+            tabs={[
+              { key: "users", label: "Users" },
+              { key: "roles", label: "Roles" },
+            ]}
+            activeTab={usersRolesTab}
+            onChange={setUsersRolesTab}
+            sticky={false}
+          />
+
+          {usersRolesTab === "users" ? (
+            <>
+          {usersError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{usersError}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
               <div className="flex items-center justify-between md:block">
                 <div>
-                  <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
+                  <div className="font-semibold text-gray-900 text-sm">Users</div>
                   <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
                 </div>
-                {canWrite && canManageUsers ? (
+                {( (
                   <button
                     type="button"
-                    onClick={() => guarded(() => handleOpenAdd())}
+                    onClick={() => guarded(() => handleOpenAdd(), "settingsUsersRoles", "create")}
                     className="md:hidden inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
                   >
                     Add User
                   </button>
-                ) : null}
+                ) )}
               </div>
               <FilterBar
                 searchValue={userSearch}
@@ -2423,20 +2775,20 @@ function SettingsPage() {
                     key: "role",
                     value: userRoleFilter,
                     onChange: (v) => setUserRoleFilter(v),
-                    options: churchRoles.map((r) => ({ label: r, value: r })),
+                    options: churchRoles.map((r) => ({ label: roleDisplay(r), value: r })),
                     placeholder: "All roles",
                   },
                 ]}
               >
-                {canWrite && canManageUsers ? (
+                {( (
                   <button
                     type="button"
-                    onClick={() => guarded(() => handleOpenAdd())}
+                    onClick={() => guarded(() => handleOpenAdd(), "settingsUsersRoles", "create")}
                     className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
                   >
                     Add User
                   </button>
-                ) : null}
+                ) )}
               </FilterBar>
               <MobileFilterBar
                 searchValue={userSearch}
@@ -2448,7 +2800,7 @@ function SettingsPage() {
                     label: "Role",
                     value: userRoleFilter,
                     defaultValue: "",
-                    options: [{ label: "All roles", value: "" }, ...churchRoles.map((r) => ({ label: r, value: r }))],
+                    options: [{ label: "All roles", value: "" }, ...churchRoles.map((r) => ({ label: roleDisplay(r), value: r }))],
                   },
                 ]}
                 onApply={(pending) => setUserRoleFilter(pending.role)}
@@ -2496,12 +2848,12 @@ function SettingsPage() {
                       <th className="px-4 py-3 text-left font-semibold">Phone</th>
                       <th className="px-4 py-3 text-left font-semibold">Role</th>
                       <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      {canManageUsers ? <th className="px-4 py-3 text-right font-semibold">Actions</th> : null}
+                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {users.length ? (
-                      users.map((row) => {
+                      users.slice((usersPage - 1) * usersLimit, usersPage * usersLimit).map((row) => {
                         const isActive = row?.isActive !== false;
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
@@ -2514,34 +2866,27 @@ function SettingsPage() {
                               <span className="hidden sm:inline">{truncateDesktopName(row?.email || "—")}</span>
                             </td>
                             <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700" title={row?.role || "—"}>
-                              <span className="sm:hidden">{truncateMobileName(row?.role || "—")}</span>
-                              <span className="hidden sm:inline">{truncateDesktopName(row?.role || "—")}</span>
+                            <td className="px-4 py-3 text-gray-700" title={roleDisplay(row?.role) || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(roleDisplay(row?.role) || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(roleDisplay(row?.role) || "—")}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"} text-xs`}>
                                 {isActive ? "Active" : "Deactivated"}
                               </span>
                             </td>
-                            {canManageUsers ? (
                             <td className="px-4 py-3">
+                              {normalizeRoleKey(row?.role) === "churchclerkadmin" ? (
+                                <div className="text-right text-gray-400 text-xs">—</div>
+                              ) : (
                               <div className="flex items-center justify-end gap-2">
-                                {!row?.hasMember ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => guarded(() => handleMakeMember(row))}
-                                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-semibold text-indigo-700 hover:bg-indigo-100 text-xs"
-                                  >
-                                    Make Member
-                                  </button>
-                                ) : null}
                                 <TableKebabMenu forceKebab items={[
-                                  canWrite && { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
-                                  canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row)), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
+                                  { label: "Edit Role", onClick: () => guarded(() => handleOpenEdit(row), "settingsUsersRoles", "update"), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
+                                  { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row), "settingsUsersRoles", "deactivate"), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
                                 ]} />
                               </div>
+                              )}
                             </td>
-                            ) : null}
                           </tr>
                         );
                       })
@@ -2565,104 +2910,159 @@ function SettingsPage() {
                 </table>
               </div>
             )}
+
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+              <Pagination
+                pagination={{
+                  currentPage: usersPage,
+                  totalPages: Math.max(1, Math.ceil(users.length / usersLimit)),
+                  total: users.length,
+                  prevPage: usersPage > 1 ? usersPage - 1 : null,
+                  nextPage: usersPage < Math.ceil(users.length / usersLimit) ? usersPage + 1 : null
+                }}
+                rowsCount={Math.min(usersLimit, Math.max(0, users.length - (usersPage - 1) * usersLimit))}
+                limit={usersLimit}
+                onLimitChange={(n) => { setUsersLimit(n); setUsersPage(1); }}
+                onPageChange={(p) => setUsersPage(p)}
+                itemName="users"
+                filtered={Boolean(userSearch || userRoleFilter)}
+                disabled={usersLoading}
+              />
+            </div>
           </div>
+            </>
+          ) : null}
+
+          {usersRolesTab === "roles" ? (
+            <>
+          {rolesError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{rolesError}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Available Roles</div>
-                <div className="mt-1 text-gray-500 text-xs">Roles and what they can do in the system</div>
-                <div className="mt-2 text-[11px] text-gray-500">
-                  ✓ = has permission, × = no permission, - = not supported
-                </div>
+                <div className="mt-1 text-gray-500 text-xs">Roles in your church and the users assigned to them</div>
               </div>
+              {( (
+                <button
+                  type="button"
+                  onClick={() => guarded(() => openCreateRole(), "settingsUsersRoles", "create")}
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
+                >
+                  Create Role
+                </button>
+              ) )}
             </div>
 
             {rolesLoading ? (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="rounded-lg border border-gray-200 p-4 animate-pulse">
-                    <div className="h-3.5 w-24 rounded bg-gray-200" />
-                    <div className="mt-3 space-y-2">
-                      {[0, 1, 2, 3, 4].map((j) => (
-                        <div key={j} className="h-3 w-full rounded bg-gray-100" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : churchRoles.length ? (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {churchRoles.map((r) => {
-                  const modules = availableRoleModules;
-                  const normalizedRole = String(r || "").trim().toLowerCase();
-                  const perms = rolePermissions?.[normalizedRole] || {};
-                  const moduleCatalog = roleConfig?.modules || {};
-
-                  return (
-                    <div key={r} className="rounded-lg border border-gray-200 p-4">
-                      <div className="font-semibold text-gray-900 text-sm">{r}</div>
-                      <div className="mt-3">
-                        {modules.length ? (
-                          <div className="overflow-x-auto rounded-lg border border-gray-200">
-                            <table className="min-w-full text-xs">
-                              <thead className="bg-gray-50 text-gray-600">
-                                <tr>
-                                  <th className="px-3 py-1.5 text-left font-semibold">Modules</th>
-                                  <th className="px-3 py-1.5 text-center font-semibold">View</th>
-                                  <th className="px-3 py-1.5 text-center font-semibold">Create</th>
-                                  <th className="px-3 py-1.5 text-center font-semibold">Update</th>
-                                  <th className="px-3 py-1.5 text-center font-semibold">Delete</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-200">
-                                {modules.map((m) => {
-                                  const supported = Array.isArray(moduleCatalog?.[m]) ? moduleCatalog[m] : [];
-                                  const supportsView = supported.includes("read") || supported.includes("view");
-                                  const supportsCreate = supported.includes("create");
-                                  const supportsUpdate = supported.includes("update");
-                                  const supportsDelete = supported.includes("delete");
-
-                                  const canView = Boolean(perms?.[m]?.read || perms?.[m]?.view);
-                                  const canCreate = Boolean(perms?.[m]?.create);
-                                  const canUpdate = Boolean(perms?.[m]?.update);
-                                  const canDelete = Boolean(perms?.[m]?.delete);
-
-                                  const markClass = (ok) => (ok ? "font-bold text-green-700" : "font-bold text-gray-400");
-
-                                  return (
-                                    <tr key={`${r}-${m}`} className="hover:bg-gray-50">
-                                      <td className="px-3 py-1 text-left font-semibold text-gray-900 whitespace-nowrap">{humanizeKey(m)}</td>
-                                      <td className="px-3 py-1 text-center">
-                                        {supportsView ? <span className={markClass(canView)}>{canView ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
-                                      </td>
-                                      <td className="px-3 py-1 text-center">
-                                        {supportsCreate ? <span className={markClass(canCreate)}>{canCreate ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
-                                      </td>
-                                      <td className="px-3 py-1 text-center">
-                                        {supportsUpdate ? <span className={markClass(canUpdate)}>{canUpdate ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
-                                      </td>
-                                      <td className="px-3 py-1 text-center">
-                                        {supportsDelete ? <span className={markClass(canDelete)}>{canDelete ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <div className="text-gray-600 text-xs">No permissions configured.</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold">Role Name</th>
+                      <th className="px-4 py-3 text-left font-semibold">Assigned Users</th>
+                      <th className="px-4 py-3 text-left font-semibold">Status</th>
+                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    <SkeletonTableRows rows={3} widths={["w-24", "w-12", "w-16", "w-28"]} />
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="mt-4 text-gray-600 text-sm">No role data available.</div>
+              <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold">Role Name</th>
+                      <th className="px-4 py-3 text-left font-semibold">Assigned Users</th>
+                      <th className="px-4 py-3 text-left font-semibold">Status</th>
+                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {roleTableRows.length ? (
+                      roleTableRows.slice((rolesPage - 1) * rolesLimit, rolesPage * rolesLimit).map((role) => {
+                        const isActive = role?.isActive !== false;
+                        const isCustom = !role?.isBuiltin;
+                        return (
+                          <tr key={role?._id || role?.key} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-semibold text-gray-900">{role?.name || roleDisplay(role?.key)}</td>
+                            <td className="px-4 py-3 text-gray-700">{role?.userCount ?? 0}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold text-xs ${isActive ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-600"}`}>
+                                {isActive ? "Active" : "Deactivated"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {isCustom ? (
+                                <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => openEditRole(role), "settingsUsersRoles", "update")}
+                                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => openPermEdit(role), "settingsUsersRoles", "update")}
+                                    className="rounded-lg border border-blue-700 bg-blue-700 px-3 py-1.5 font-semibold text-white hover:bg-blue-800 text-xs"
+                                  >
+                                    Assign Permission
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => onToggleRoleActive(role), "settingsUsersRoles", "deactivate")}
+                                    className={`rounded-lg border px-3 py-1.5 font-semibold text-xs ${
+                                      isActive
+                                        ? "border-red-600 bg-white text-red-600 hover:bg-red-50"
+                                        : "border-green-700 bg-white text-green-700 hover:bg-green-50"
+                                    }`}
+                                  >
+                                    {isActive ? "Deactivate" : "Activate"}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-right text-gray-400 text-xs">Built-in</div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm">
+                          No roles found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
+
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+              <Pagination
+                pagination={{
+                  currentPage: rolesPage,
+                  totalPages: Math.max(1, Math.ceil(roleTableRows.length / rolesLimit)),
+                  total: roleTableRows.length,
+                  prevPage: rolesPage > 1 ? rolesPage - 1 : null,
+                  nextPage: rolesPage < Math.ceil(roleTableRows.length / rolesLimit) ? rolesPage + 1 : null
+                }}
+                rowsCount={Math.min(rolesLimit, Math.max(0, roleTableRows.length - (rolesPage - 1) * rolesLimit))}
+                limit={rolesLimit}
+                onLimitChange={(n) => { setRolesLimit(n); setRolesPage(1); }}
+                onPageChange={(p) => setRolesPage(p)}
+                itemName="roles"
+                disabled={rolesLoading}
+              />
+            </div>
           </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -2698,7 +3098,7 @@ function SettingsPage() {
                     key: "role",
                     value: auditRole,
                     onChange: (v) => setAuditRole(v),
-                    options: ["churchadmin","associateadmin","secretary","financialofficer","leader"].map((r) => ({ label: r, value: r })),
+                    options: churchRoles.map((r) => ({ label: roleDisplay(r), value: r })),
                     placeholder: "All Roles",
                   },
                 ]}
@@ -2733,7 +3133,7 @@ function SettingsPage() {
                     label: "Role",
                     value: auditRole,
                     defaultValue: "",
-                    options: [{ label: "All Roles", value: "" }, ...["churchadmin","associateadmin","secretary","financialofficer","leader"].map((r) => ({ label: r, value: r }))],
+                    options: [{ label: "All Roles", value: "" }, ...churchRoles.map((r) => ({ label: roleDisplay(r), value: r }))],
                   },
                 ]}
                 onApply={(pending) => { setAuditModule(pending.module); setAuditAction(pending.action); setAuditRole(pending.role); }}
@@ -2899,8 +3299,8 @@ function SettingsPage() {
               </button>
               <button
                 type="button"
-                onClick={handleToggleActive}
-                disabled={!canWrite}
+                onClick={() => guarded(handleToggleActive, "settings", "update")}
+                disabled={false}
                 className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
                 Confirm
@@ -2931,85 +3331,51 @@ function SettingsPage() {
             {addError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{addError}</div> : null}
 
             <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleCreateUser(e)); }} className="mt-4 space-y-4" autoComplete="off">
-              <div>
-                <label className="block font-medium text-gray-700 mb-1 text-sm">This user is</label>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                    <input
-                      type="radio"
-                      name="addUserMode"
-                      checked={addMode === "manual"}
-                      onChange={() => setAddMode("manual")}
-                      className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
-                    />
-                    Not registered as a member
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                    <input
-                      type="radio"
-                      name="addUserMode"
-                      checked={addMode === "member"}
-                      onChange={() => setAddMode("member")}
-                      className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
-                    />
-                    An existing member
-                  </label>
-                </div>
-              </div>
-
-              {addMode === "member" ? (
-                <div className="relative">
-                  <label className="block font-medium text-gray-700 mb-1 text-sm">Search member</label>
-                  <input
-                    type="text"
-                    placeholder="Search members by name, ID, or phone"
-                    value={memberSearch}
-                    onChange={(e) => { setMemberSearch(e.target.value); setMemberSearchOpen(true); }}
-                    onFocus={() => memberResults.length && setMemberSearchOpen(true)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                  />
-                  {memberSearchOpen && memberSearch.trim() ? (
-                    <div className="absolute left-0 right-0 z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-                      {memberSearching ? (
-                        <div className="px-3 py-2 text-gray-400 text-sm">Searching…</div>
-                      ) : memberResults.length ? (
-                        memberResults.map((m) => (
-                          <button
-                            key={m._id}
-                            type="button"
-                            onClick={() => pickMember(m)}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-blue-50"
-                          >
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium text-gray-900 text-sm">
-                                {[m?.firstName, m?.lastName].filter(Boolean).join(" ") || "—"}
-                              </span>
-                              <span className="block truncate text-gray-400 text-xs">{m?.phoneNumber || m?.email || ""}</span>
-                            </span>
-                            {m?.memberId ? (
-                              <span className="shrink-0 font-mono text-xs text-gray-400">{m.memberId}</span>
-                            ) : null}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-gray-400 text-sm">No members found</div>
-                      )}
-                    </div>
-                  ) : null}
-                  <div className="mt-1 text-gray-400 text-xs">Pick a member to autofill their details.</div>
-                </div>
-              ) : null}
-
-              <div>
+              <div className="relative">
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. John Doe"
-                  value={newFullName}
-                  onChange={(e) => setNewFullName(e.target.value)}
+                  placeholder="Search member by name, ID or phone number"
+                  value={memberSearch}
+                  onChange={(e) => {
+                    memberPickedRef.current = false;
+                    setMemberSearch(e.target.value);
+                    setMemberSearchOpen(true);
+                    setPickedMemberId(null);
+                  }}
+                  onFocus={() => memberResults.length && setMemberSearchOpen(true)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
+                {memberSearchOpen && memberSearch.trim() ? (
+                  <div className="absolute left-0 right-0 z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                    {memberSearching ? (
+                      <div className="px-3 py-2 text-gray-400 text-sm">Searching…</div>
+                    ) : memberResults.length ? (
+                      memberResults.map((m) => (
+                        <button
+                          key={m._id}
+                          type="button"
+                          onClick={() => pickMember(m)}
+                          className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-blue-50"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-gray-900 text-sm">
+                              {[m?.firstName, m?.lastName].filter(Boolean).join(" ") || "—"}
+                            </span>
+                            <span className="block truncate text-gray-400 text-xs">{m?.phoneNumber || m?.email || ""}</span>
+                          </span>
+                          {m?.memberId ? (
+                            <span className="shrink-0 font-mono text-xs text-gray-400">{m.memberId}</span>
+                          ) : null}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-400 text-sm">No members found</div>
+                    )}
+                  </div>
+                ) : null}
+                <div className="mt-1 text-gray-400 text-xs">Only registered members can be made users — pick a member to continue.</div>
               </div>
 
               <div>
@@ -3078,8 +3444,8 @@ function SettingsPage() {
                   required
                 >
                   <option value="">Select role</option>
-                  {churchRoles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                  {assignableRoles.map((r) => (
+                    <option key={r} value={r}>{roleDisplay(r)}</option>
                   ))}
                 </select>
               </div>
@@ -3113,8 +3479,8 @@ function SettingsPage() {
           <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="font-semibold text-gray-900 text-lg">Edit User</div>
-                <div className="mt-1 text-gray-600 text-sm">Update user details and role.</div>
+                <div className="font-semibold text-gray-900 text-lg">Edit Role</div>
+                <div className="mt-1 text-gray-600 text-sm">Change the role assigned to {editUser?.fullName || "this user"}.</div>
               </div>
               <button
                 type="button"
@@ -3129,40 +3495,6 @@ function SettingsPage() {
 
             <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveEdit(e)); }} className="mt-4 space-y-4">
               <div>
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
-                <input
-                  type="text"
-                  value={editFullName}
-                  placeholder="e.g. John Doe"
-                  onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  placeholder="e.g. name@example.com"
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
-                <PhoneNumberInput
-                  value={editPhone}
-                  onChange={setEditPhone}
-                  error={Boolean(editError && String(editError).toLowerCase().includes("invalid phone"))}
-                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                />
-              </div>
-
-              <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Role</label>
                 <select
                   value={editRole}
@@ -3171,8 +3503,8 @@ function SettingsPage() {
                   required
                 >
                   <option value="">Select role</option>
-                  {churchRoles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                  {assignableRoles.map((r) => (
+                    <option key={r} value={r}>{roleDisplay(r)}</option>
                   ))}
                 </select>
               </div>
@@ -3242,6 +3574,250 @@ function SettingsPage() {
                 className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Create role modal (ChurchClerk admin only) */}
+      {createRoleOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setCreateRoleOpen(false)} />
+          <div className="relative w-full max-w-4xl rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold text-gray-900 text-lg">Create Role</div>
+                <div className="mt-1 text-gray-600 text-sm">Create a custom role for your church with module-action permissions.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateRoleOpen(false)}
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm"
+              >
+                ×
+              </button>
+            </div>
+
+            {createRoleError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{createRoleError}</div> : null}
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Name</label>
+                <input
+                  type="text"
+                  value={createRoleName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setCreateRoleName(next);
+                    setCreateRoleKey(normalizeRoleKeyInput(next));
+                  }}
+                  placeholder="e.g. Branch Pastor"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                />
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700 md:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={createRoleAllAccess}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setCreateRoleAllAccess(checked);
+                    setCreateRolePermissions((prev) => setAllRoleMatrixValues(prev, checked));
+                  }}
+                  className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
+                />
+                Grant all permissions
+              </label>
+            </div>
+
+            {renderRoleMatrix(createRolePermissions, setCreateRolePermissions, setCreateRoleAllAccess)}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateRoleOpen(false)}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onCreateRole}
+                loading={createRoleSaving}
+                loadingText="Creating..."
+                disabled={!createRoleName.trim() || !createRoleKey.trim()}
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+              >
+                Create
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {editRoleTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditRoleTarget(null)} />
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold text-gray-900 text-lg">Edit Role</div>
+                <div className="mt-1 text-gray-600 text-sm">Update the display name for this role.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditRoleTarget(null)}
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm"
+              >
+                ×
+              </button>
+            </div>
+
+            {editRoleError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{editRoleError}</div> : null}
+
+            <div className="mt-4">
+              <label className="block font-medium text-gray-700 mb-1 text-sm">Name</label>
+              <input
+                type="text"
+                value={editRoleName}
+                onChange={(e) => setEditRoleName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+              />
+              <div className="mt-2 text-gray-400 text-xs">Key: {editRoleTarget?.key}</div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditRoleTarget(null)}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onSaveEditRole}
+                loading={editRoleSaving}
+                loadingText="Saving..."
+                disabled={!editRoleName.trim()}
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {permRoleTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setPermRoleTarget(null)} />
+          <div className="relative w-full max-w-4xl rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold text-gray-900 text-lg">Assign Permissions</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{permRoleTarget?.name || permRoleTarget?.key}</div>
+                <div className="mt-1 text-gray-600 text-sm">Check or uncheck the permissions this role should have.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPermRoleTarget(null)}
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm"
+              >
+                ×
+              </button>
+            </div>
+
+            {permRoleError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{permRoleError}</div> : null}
+
+            <label className="mt-4 inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={permRoleAllAccess}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setPermRoleAllAccess(checked);
+                  setPermRoleMatrix((prev) => setAllRoleMatrixValues(prev, checked));
+                }}
+                className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
+              />
+              Grant all permissions
+            </label>
+
+            {renderRoleMatrix(permRoleMatrix, setPermRoleMatrix, setPermRoleAllAccess)}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPermRoleTarget(null)}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onSavePermEdit}
+                loading={permRoleSaving}
+                loadingText="Saving..."
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deactivateTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeactivateTarget(null)} />
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6">
+            <div className="font-semibold text-gray-900 text-lg">Deactivate Role</div>
+            <div className="mt-2 text-gray-600 text-sm">
+              Deactivate <span className="font-semibold">{deactivateTarget?.name || deactivateTarget?.key}</span>? Users will no longer be able to use this role's permissions.
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeactivateTarget(null)}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={confirmDeactivateRole}
+                loading={roleActionSaving}
+                loadingText="Deactivating..."
+                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-50 text-sm"
+              >
+                Deactivate
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {cannotDeactivateInfo ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setCannotDeactivateInfo(null)} />
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6">
+            <div className="font-semibold text-gray-900 text-lg">Cannot Deactivate Role</div>
+            <div className="mt-2 text-gray-600 text-sm">
+              <span className="font-semibold">{cannotDeactivateInfo?.name}</span> cannot be deactivated because {cannotDeactivateInfo?.count ?? 0} user(s) are assigned to it. Reassign them to a different role first.
+            </div>
+            <div className="mt-5 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setCannotDeactivateInfo(null)}
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+              >
+                OK
               </button>
             </div>
           </div>

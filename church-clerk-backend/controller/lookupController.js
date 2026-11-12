@@ -24,9 +24,6 @@ export const defaultValuesByKind = {
     "Sunday Service",
     "Sunday First Service",
     "Sunday Second Service",
-    "Sunday Third Service",
-    "Sunday Fourth Service",
-    "Sunday Fifth Service",
     "Worship Service",
     "Bible Study",
     "Children Service",
@@ -37,11 +34,10 @@ export const defaultValuesByKind = {
     "groups Meeting",
     "department Meeting"
   ],
-  offeringType: ["first offering", "second offering", "third offering", "fourth offering", "fifth offering"],
+  offeringType: ["main offering", "first offering", "second offering"],
   eventCategory: [
     "Conference",
-    "Service",
-    "Worship",
+    "Worship & Praises",
     "Prayers",
     "Outreach",
     "Bible Study",
@@ -67,12 +63,33 @@ export const defaultValuesByKind = {
     "Transportation",
     "Pastor Support",
     "Charity",
-    "Fundraising",
     "Program",
     "Building materials",
     "Salary"
   ],
-  businessExpenseCategory: [],
+  generalExpenseCategory: [
+    "Maintenance",
+    "Equipment",
+    "Utilities",
+    "Transportation",
+    "Pastor Support",
+    "Charity",
+    "Program",
+    "Building materials",
+    "Salary"
+  ],
+  businessExpenseCategory: [
+    "Salary",
+    "Marketing",
+    "Utility",
+    "Inventory",
+    "Equipment",
+    "Transportation",
+    "Maintenance",
+    "Other"
+  ],
+  businessIncomeCategory: ["Sales", "Books", "Pens", "Services", "Other"],
+  seedType: ["Building Fund", "Thanksgiving Seed"],
   incomeCategory: [
     "Tithe",
     "Offering",
@@ -197,7 +214,7 @@ export const listLookupValues = async (req, res) => {
     // (offerings, special funds, business income, etc.) plus static labels for
     // sources that have no category field (tithes, pledges, welfare contributions).
     let recordedValues = [];
-    if (kind === "expenseCategory") {
+    if (kind === "expenseCategory" || kind === "generalExpenseCategory") {
       recordedValues = await collectExpenseCategoriesFromRecords(churchId);
     } else if (kind === "incomeCategory") {
       recordedValues = await collectIncomeCategoriesFromRecords(churchId);
@@ -216,6 +233,9 @@ export const listLookupValues = async (req, res) => {
           "First Sunday Service",
           "Second Sunday Service",
           "Third Sunday Service",
+          "Sunday Third Service",
+          "Sunday Fourth Service",
+          "Sunday Fifth Service",
           "1st Service",
           "2nd Service",
           "3rd Service",
@@ -276,9 +296,34 @@ const LOOKUP_USAGE_SOURCES = {
     ...EXPENSE_CATEGORY_SOURCES,
     { Model: Budget, field: "items.category" },
   ],
+  generalExpenseCategory: [
+    { Model: GeneralExpenses, field: "category" },
+    { Model: Budget, field: "items.category" },
+  ],
+  businessExpenseCategory: [
+    { Model: BusinessExpenses, field: "category" },
+    { Model: Budget, field: "items.category" },
+  ],
   incomeCategory: [
     ...INCOME_CATEGORY_SOURCES,
     { Model: Budget, field: "items.category" },
+  ],
+  businessIncomeCategory: [
+    { Model: BusinessIncome, field: "category" },
+    { Model: BusinessIncome, field: "recievedFrom" },
+  ],
+  offeringType: [
+    { Model: Offering, field: "offeringType" },
+    { Model: ProgramOffering, field: "offeringType" },
+  ],
+  seedType: [
+    { Model: ProgramOffering, field: "offeringType" },
+  ],
+  specialFundCategory: [
+    { Model: SpecialFund, field: "category" },
+  ],
+  welfareDisbursementCategory: [
+    { Model: WelfareDisbursements, field: "category" },
   ],
 };
 

@@ -59,7 +59,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "read"),
   getPrograms
 );
@@ -69,7 +69,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "read"),
   getProgramStats
 );
@@ -80,7 +80,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "read"),
   getUpcomingPrograms
 );
@@ -90,7 +90,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "read"),
   getOngoingPrograms
 );
@@ -100,7 +100,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "read"),
   getPastPrograms
 );
@@ -111,8 +111,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   getSingleProgram
 );
 router.post(
@@ -121,7 +121,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "create"),
   createProgram
 );
@@ -131,7 +131,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "update"),
   updateProgram
 );
@@ -141,7 +141,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "delete"),
   deletionGuard("program"),
   deleteProgram
@@ -153,7 +153,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "create"),
   createProgramAttendee
 );
@@ -163,8 +163,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   getProgramAttendees
 );
 router.put(
@@ -173,7 +173,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "update"),
   updateProgramAttendee
 );
@@ -183,29 +183,29 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "delete"),
   deleteProgramAttendee
 );
 
-router.get("/programs/:programId/advance-registration/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), advanceRegLink.status);
-router.post("/programs/:programId/advance-registration/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegLink.generate);
-router.delete("/programs/:programId/advance-registration/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegLink.revoke);
+router.get("/programs/:programId/advance-registration/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "read"), advanceRegLink.status);
+router.post("/programs/:programId/advance-registration/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), advanceRegLink.generate);
+router.delete("/programs/:programId/advance-registration/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), advanceRegLink.revoke);
 
-router.get("/programs/:programId/advance-registration/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), advanceRegQr.status);
-router.post("/programs/:programId/advance-registration/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegQr.generate);
-router.delete("/programs/:programId/advance-registration/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegQr.revoke);
-router.get("/program-guests/search", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("visitors", "view"), searchProgramGuests);
+router.get("/programs/:programId/advance-registration/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "read"), advanceRegQr.status);
+router.post("/programs/:programId/advance-registration/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), advanceRegQr.generate);
+router.delete("/programs/:programId/advance-registration/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), advanceRegQr.revoke);
+router.get("/program-guests/search", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("visitors", "read"), searchProgramGuests);
 
-router.post("/programs/:programId/attendees/:attendeeId/ensure-visitor", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), ensureGuestVisitor);
+router.post("/programs/:programId/attendees/:attendeeId/ensure-visitor", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), ensureGuestVisitor);
 
-router.get("/programs/:programId/check-in/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), checkInLink.status);
-router.post("/programs/:programId/check-in/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInLink.generate);
-router.delete("/programs/:programId/check-in/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInLink.revoke);
+router.get("/programs/:programId/check-in/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "read"), checkInLink.status);
+router.post("/programs/:programId/check-in/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), checkInLink.generate);
+router.delete("/programs/:programId/check-in/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), checkInLink.revoke);
 
-router.get("/programs/:programId/check-in/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), checkInQr.status);
-router.post("/programs/:programId/check-in/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInQr.generate);
-router.delete("/programs/:programId/check-in/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInQr.revoke);
+router.get("/programs/:programId/check-in/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "read"), checkInQr.status);
+router.post("/programs/:programId/check-in/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), checkInQr.generate);
+router.delete("/programs/:programId/check-in/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"), requirePermission("programs", "update"), checkInQr.revoke);
 
 
 router.post(
@@ -214,7 +214,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "create"),
   uploadAttendanceFile,
   uploadProgramAttendanceFile
@@ -226,8 +226,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   listProgramAttendanceFiles
 );
 
@@ -237,8 +237,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   downloadProgramAttendanceFile
 );
 
@@ -248,7 +248,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "update"),
   updateProgramAttendanceFile
 );
@@ -259,7 +259,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "delete"),
   deleteProgramAttendanceFile
 );
@@ -270,7 +270,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "create"),
   backdatingGuard({ dateField: "offeringDate", module: "programOffering", entityType: "programOffering" }),
   createProgramOffering
@@ -282,8 +282,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   getProgramOfferings
 );
 
@@ -293,7 +293,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "update"),
   conditionalImmutableGuard(),
   updateProgramOffering
@@ -305,7 +305,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "create"),
   uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
@@ -317,8 +317,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   getScopedExpenses("program")
 );
 router.put(
@@ -327,7 +327,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "update"),
   uploadReceiptFile,
   conditionalImmutableGuard(),
@@ -339,8 +339,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("programs", "read"),
   downloadScopedExpenseReceipt("program")
 );
 router.delete(
@@ -349,7 +349,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("programs", "delete"),
   conditionalImmutableGuard(),
   deleteScopedExpense("program")

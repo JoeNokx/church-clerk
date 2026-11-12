@@ -232,8 +232,25 @@ const updateSystemUser = async (req, res) => {
   try {
     const { role, isActive } = req.body || {};
 
+    const target = await User.findById(req.params.id).select("church role").lean();
+    if (!target) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // A user with no church is a system account — managing system accounts
+    // is the super admin's domain, regardless of any permission matrix.
+    const targetScope = target.church ? "church" : "system";
+    const actorIsSuper = String(req.user?.role || "").trim().toLowerCase() === "superadmin";
+    if (targetScope === "system" && !actorIsSuper) {
+      return res.status(403).json({ message: "Only the super admin can manage system admin accounts" });
+    }
+
     const update = {};
     if (role !== undefined) {
+      if (String(req.user?._id || "") === String(req.params.id)) {
+        return res.status(403).json({ message: "You cannot change your own role" });
+      }
+
       const nextRole = String(role || "").trim().toLowerCase();
       if (!nextRole) {
         return res.status(400).json({ message: "Invalid role" });
@@ -242,6 +259,9 @@ const updateSystemUser = async (req, res) => {
       const isLegacy = [...SYSTEM_ROLES, ...CHURCH_ROLES].includes(nextRole);
       if (isLegacy) {
         const expectedScope = SYSTEM_ROLES.includes(nextRole) ? "system" : "church";
+        if (expectedScope !== targetScope) {
+          return res.status(400).json({ message: "Invalid role" });
+        }
         const dbRole = await Role.findOne({ key: nextRole, scope: expectedScope }).select("_id isActive").lean();
         if (dbRole?._id && dbRole?.isActive === false) {
           return res.status(400).json({ message: "Invalid role" });
@@ -249,7 +269,14 @@ const updateSystemUser = async (req, res) => {
         update.role = nextRole;
         update.roleRef = dbRole?._id || null;
       } else {
-        const dbRole = await Role.findOne({ key: nextRole, isActive: true }).select("_id").lean();
+        // Custom roles must match the target's scope — a church user can
+        // only get a church role (theirs or a global one), a system user
+        // can only get a system role.
+        const roleFilter = { key: nextRole, scope: targetScope, isActive: true };
+        if (targetScope === "church") {
+          roleFilter.$or = [{ church: target.church }, { church: null }];
+        }
+        const dbRole = await Role.findOne(roleFilter).select("_id").lean();
         if (!dbRole?._id) {
           return res.status(400).json({ message: "Invalid role" });
         }
@@ -260,7 +287,26 @@ const updateSystemUser = async (req, res) => {
     }
 
     if (isActive !== undefined) {
+      if (String(req.user?._id || "") === String(req.params.id)) {
+        return res.status(400).json({ message: "You cannot change your own account status" });
+      }
       update.isActive = Boolean(isActive);
+    }
+
+    // Never leave the system without a super admin — block demoting or
+    // deactivating the last remaining one.
+    const targetIsSuperAdmin = String(target.role || "").trim().toLowerCase() === "superadmin";
+    const demoting = role !== undefined && String(role || "").trim().toLowerCase() !== "superadmin";
+    const deactivating = isActive === false;
+    if (targetIsSuperAdmin && (demoting || deactivating)) {
+      const otherSupers = await User.countDocuments({
+        _id: { $ne: target._id },
+        role: "superadmin",
+        isActive: { $ne: false }
+      });
+      if (otherSupers === 0) {
+        return res.status(409).json({ message: "Cannot demote or deactivate the last super admin" });
+      }
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, update, {
@@ -897,8 +943,27 @@ const deleteSystemUser = async (req, res) => {
       return res.status(400).json({ message: "You cannot delete your own account" });
     }
 
+    // Deleting a system admin account (one with no church) is reserved for
+    // the super admin — same rule as updateSystemUser.
+    const target = await User.findById(id).select("church role").lean();
+    if (!target) return res.status(404).json({ message: "User not found" });
+    if (!target.church && String(req.user?.role || "").trim().toLowerCase() !== "superadmin") {
+      return res.status(403).json({ message: "Only the super admin can delete system admin accounts" });
+    }
+
+    // Never delete the last remaining super admin.
+    if (String(target.role || "").trim().toLowerCase() === "superadmin") {
+      const otherSupers = await User.countDocuments({
+        _id: { $ne: target._id },
+        role: "superadmin",
+        isActive: { $ne: false }
+      });
+      if (otherSupers === 0) {
+        return res.status(409).json({ message: "Cannot delete the last super admin" });
+      }
+    }
+
     const user = await User.findByIdAndDelete(id).lean();
-    if (!user) return res.status(404).json({ message: "User not found" });
 
     // Release the link from any member record pointing at this account.
     await Member.updateMany({ user: id }, { $unset: { user: 1 } });

@@ -65,6 +65,7 @@ function PersonBadge({ type }) {
 
 // ─── Support Form Modal ──────────────────────────────────────────
 function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, canCreate, canUpdate }) {
+  const guarded = useGuardedAction();
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -202,7 +203,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
 
     try {
       if (mode === "edit") {
-        if (!canUpdate) return;
+        if (!canUpdate) { guarded(undefined, "outreach", "update"); return; }
         if (!amount || Number(amount) <= 0) { setFormError("Amount is required."); return; }
         if (!date) { setFormError("Date is required."); return; }
         const isFreeText = Boolean(initialData?.name);
@@ -218,7 +219,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
         return;
       }
 
-      if (!canCreate) return;
+      if (!canCreate) { guarded(undefined, "outreach", "create"); return; }
       const hasCurrentInput = Boolean(selectedPerson || String(manualName || "").trim() || String(amount || "").trim() || date || String(note || "").trim());
       const payloads = pendingEntries.map((p) => p?.payload).filter(Boolean);
       if (hasCurrentInput) {
@@ -587,16 +588,14 @@ export default function OutreachSupportTab({ eventId }) {
               {summary.total ? ` • Total: ${formatMoney(summary.total, currency)}` : ""}
             </div>
           </div>
-          {canCreate ? (
-            <button
+          {(<button
               type="button"
-              onClick={() => guarded(() => setForm({ open: true, mode: "create", data: null }))}
+              onClick={() => guarded(() => setForm({ open: true, mode: "create", data: null }), "outreach", "create")}
               className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
             >
               <span className="leading-none text-lg">+</span>
               Record Support
-            </button>
-          ) : null}
+            </button>)}
         </div>
 
         <FilterBar
@@ -608,16 +607,14 @@ export default function OutreachSupportTab({ eventId }) {
           dateTo={dateTo}
           onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchRecords({ page: 1, dateFrom: from, dateTo: to }); }}
         >
-          {canCreate ? (
-            <button
+          {(<button
               type="button"
-              onClick={() => guarded(() => setForm({ open: true, mode: "create", data: null }))}
+              onClick={() => guarded(() => setForm({ open: true, mode: "create", data: null }), "outreach", "create")}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
             >
               <span className="leading-none text-lg">+</span>
               Record Support
-            </button>
-          ) : null}
+            </button>)}
         </FilterBar>
         <MobileFilterBar
           searchValue={search}
@@ -683,7 +680,7 @@ export default function OutreachSupportTab({ eventId }) {
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6 text-right">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRecord(row) },
-                        canUpdate && { label: "Edit", onClick: () => guarded(() => setForm({ open: true, mode: "edit", data: row })) }
+                        { label: "Edit", onClick: () => guarded(() => setForm({ open: true, mode: "edit", data: row }), "outreach", "update") }
                       ]} />
                     </td>
                   </tr>

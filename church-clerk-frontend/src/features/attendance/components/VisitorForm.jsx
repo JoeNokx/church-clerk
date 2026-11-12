@@ -7,6 +7,7 @@ import debounce from "../../../shared/utils/debounce.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatSessionDate(value) {
   if (!value) return "-";
@@ -17,6 +18,7 @@ function formatSessionDate(value) {
 
 function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(AttendanceContext);
 
   const sessionContext = session
@@ -234,6 +236,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
       try {
         if (!canEdit) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.updateVisitor(selectedExisting._id, { attendance: targetSession._id });
@@ -297,12 +300,14 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
       if (mode === "edit") {
         if (!canEdit) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.updateVisitor(initialData?._id, payload);
       } else {
         if (!canCreate) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.createVisitor(payload);

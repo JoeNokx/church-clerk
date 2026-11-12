@@ -31,9 +31,7 @@ export const getSystemSettings = async (req, res) => {
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
         referralBonusDays: settings.referralBonusDays,
-        usdToGhsRate: settings.usdToGhsRate,
-        enforceBackdating: !!settings.enforceBackdating,
-        enforceImmutability: !!settings.enforceImmutability
+        usdToGhsRate: settings.usdToGhsRate
       }
     });
   } catch (error) {
@@ -43,7 +41,7 @@ export const getSystemSettings = async (req, res) => {
 
 export const updateSystemSettings = async (req, res) => {
   try {
-    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, referralBonusDays, usdToGhsRate, enforceBackdating, enforceImmutability } = req.body || {};
+    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, referralBonusDays, usdToGhsRate } = req.body || {};
 
     const update = {};
 
@@ -95,14 +93,6 @@ export const updateSystemSettings = async (req, res) => {
       update.usdToGhsRate = n;
     }
 
-    if (enforceBackdating !== undefined) {
-      update.enforceBackdating = Boolean(enforceBackdating);
-    }
-
-    if (enforceImmutability !== undefined) {
-      update.enforceImmutability = Boolean(enforceImmutability);
-    }
-
     const settings = await getSingletonSettings();
 
     if (Object.keys(update).length === 0) {
@@ -114,9 +104,7 @@ export const updateSystemSettings = async (req, res) => {
           creditsPerGhs: settings.creditsPerGhs,
           smsCostCredits: settings.smsCostCredits,
           referralBonusDays: settings.referralBonusDays,
-          usdToGhsRate: settings.usdToGhsRate,
-          enforceBackdating: !!settings.enforceBackdating,
-          enforceImmutability: !!settings.enforceImmutability
+          usdToGhsRate: settings.usdToGhsRate
         }
       });
     }
@@ -177,9 +165,7 @@ export const updateSystemSettings = async (req, res) => {
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
         referralBonusDays: settings.referralBonusDays,
-        usdToGhsRate: settings.usdToGhsRate,
-        enforceBackdating: !!settings.enforceBackdating,
-        enforceImmutability: !!settings.enforceImmutability
+        usdToGhsRate: settings.usdToGhsRate
       }
     });
   } catch (error) {
@@ -199,9 +185,7 @@ export const getSystemSettingsSnapshot = async () => {
     creditsPerGhs: Number(settings.creditsPerGhs || 100),
     smsCostCredits: Number(settings.smsCostCredits ?? 5),
     referralBonusDays: Number(settings.referralBonusDays || 30),
-    usdToGhsRate: Number(settings.usdToGhsRate ?? 0),
-    enforceBackdating: Boolean(settings.enforceBackdating),
-    enforceImmutability: Boolean(settings.enforceImmutability)
+    usdToGhsRate: Number(settings.usdToGhsRate ?? 0)
   };
   _snapshotCache = snapshot;
   _snapshotCachedAt = Date.now();

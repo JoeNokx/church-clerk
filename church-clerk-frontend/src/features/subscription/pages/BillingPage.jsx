@@ -24,6 +24,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import { getMyReferralCode } from "../../referral/services/referral.api.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
 import ChurchContext from "../../church/church.store.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
@@ -234,8 +235,7 @@ function BillingPage() {
   const { user } = useAuth();
   const churchStore = useContext(ChurchContext);
   const activeChurch = churchStore?.activeChurch;
-  // HQ monitoring a branch is read-only — hide all billing write actions
-  const canManageBilling = !(activeChurch?._id && activeChurch?.canEdit === false);
+  const guarded = useGuardedAction();
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
@@ -327,12 +327,12 @@ function BillingPage() {
 
   // System admin settings (configuration durations + governance toggles)
   // Hidden for delegated sessions — those are scoped to a single church view.
+  // Any system-scope account (no home church) sees the system admin section —
+  // not just the old built-in role names. Delegates stay in church view.
   const isSystemAdmin = useMemo(() => {
     if (isDelegateSession()) return false;
-    const raw = String(user?.role || "").trim().toLowerCase();
-    const norm = raw.replace(/[\s_\-]+/g, "");
-    return norm === "superadmin" || norm === "supportadmin";
-  }, [user?.role]);
+    return !user?.church;
+  }, [user?.church]);
 
   const [sysLoading, setSysLoading] = useState(false);
   const [sysError, setSysError] = useState("");
@@ -812,7 +812,7 @@ function BillingPage() {
                 description={p?.description}
                 features={highlights}
                 actionLabel={actionLabel}
-                onAction={canManageBilling ? () => onPlanAction(p) : undefined}
+                onAction={() => guarded(() => onPlanAction(p))}
                 disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || isHQLockedPlan || (isCurrent && !paymentRequired)}
                 loading={prorationLoading && isUpgrade && String(id) === String(planId)}
                 variant="landing"
@@ -922,7 +922,7 @@ function BillingPage() {
         {hasPendingCancel ? (
           <button
             type="button"
-            onClick={() => setShowResumeConfirm(true)}
+            onClick={() => guarded(() => setShowResumeConfirm(true))}
             disabled={manageLoading}
             className="rounded-lg border border-green-200 bg-white px-4 py-2 font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60 text-xs"
           >
@@ -931,7 +931,7 @@ function BillingPage() {
         ) : (
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => guarded(onCancel)}
             disabled={manageLoading || isFreeTrial}
             title={isFreeTrial ? "Cannot cancel during free trial" : undefined}
             className="rounded-lg border border-red-200 bg-white px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 text-xs"
@@ -1106,16 +1106,14 @@ function BillingPage() {
                 }
               </div>
             </div>
-            {canManageBilling ? (
             <button
               type="button"
-              onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
+              onClick={() => guarded(() => { setPlanId(String(currentPlanId)); onPay(); })}
               disabled={!currentPlanId || manageLoading}
               className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-xs"
             >
               Renew Now
             </button>
-            ) : null}
           </div>
         )}
 
@@ -1129,16 +1127,14 @@ function BillingPage() {
                 <strong>Subscription suspended.</strong> Your grace period has ended and access to write actions is locked. Renew to restore full access.
               </div>
             </div>
-            {canManageBilling ? (
             <button
               type="button"
-              onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
+              onClick={() => guarded(() => { setPlanId(String(currentPlanId)); onPay(); })}
               disabled={!currentPlanId || manageLoading}
               className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-xs"
             >
               Renew Now
             </button>
-            ) : null}
           </div>
         )}
 
@@ -1388,7 +1384,7 @@ function BillingPage() {
         </div>
       </div>
 
-      {canManageBilling ? cancelSubscriptionCard : null}
+      {cancelSubscriptionCard}
 
       <ModalShell
         open={showCancelConfirm}

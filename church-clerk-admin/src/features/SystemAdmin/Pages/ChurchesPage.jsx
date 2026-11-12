@@ -18,6 +18,7 @@ import Pagination from "../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import { useAuth } from "../../Auth/useAuth.js";
 
 function formatCreatedAt(value) {
   if (!value) return "—";
@@ -188,6 +189,7 @@ function trendPct(current, prev) {
 }
 
 function ChurchesPage() {
+  const { guardPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
@@ -538,27 +540,27 @@ function ChurchesPage() {
                             },
                             {
                               label: "View as Church",
-                              onClick: () => setDelegateModal(c),
+                              onClick: () => guardPermission("systemChurches", "update", () => setDelegateModal(c)),
                               desktopClassName: "rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             },
                             isSuspended
                               ? {
                                   label: "Unsuspend",
-                                  onClick: () => setUnsuspendModal(c),
+                                  onClick: () => guardPermission("systemChurches", "update", () => setUnsuspendModal(c)),
                                   desktopClassName: "rounded-md border border-green-200 bg-white px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
                                 }
                               : {
                                   label: "Suspend",
-                                  onClick: () => { setSuspendModal(c); setSuspendReason(""); },
+                                  onClick: () => guardPermission("systemChurches", "update", () => { setSuspendModal(c); setSuspendReason(""); }),
                                   desktopClassName: "rounded-md border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-50"
                                 },
                             {
                               label: "Delete",
-                              onClick: () => { setDeleteModal(c); setDeleteConfirmName(""); },
+                              onClick: () => guardPermission("systemChurches", "delete", () => { setDeleteModal(c); setDeleteConfirmName(""); }),
                               danger: true,
                               desktopClassName: "rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
                             }
-                          ]}
+                          ].filter(Boolean)}
                         />
                       </td>
                     </tr>

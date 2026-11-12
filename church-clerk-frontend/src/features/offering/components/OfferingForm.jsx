@@ -3,13 +3,13 @@ import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 
 const SERVICE_TYPES = [
   "Sunday Service",
-  "First Sunday Service",
-  "Second Sunday Service",
-  "Third Sunday Service",
+  "Sunday First Service",
+  "Sunday Second Service",
   "Worship Service",
   "Bible Study",
   "Special Program",
@@ -22,25 +22,24 @@ const SERVICE_TYPES = [
 ];
 
 const OFFERING_TYPES = [
+  "main offering",
   "first offering",
-  "second offering",
-  "third offering",
-  "fourth offering",
-  "fifth offering"
+  "second offering"
 ];
 
 function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(OfferingContext);
+  const guarded = useGuardedAction();
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("offerings", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+  const serviceTypeOptions = [...new Set([...(lookupServiceTypes || []), ...SERVICE_TYPES])];
 
   const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
-  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
+  const offeringTypeOptions = [...new Set([...(lookupOfferingTypes || []), ...OFFERING_TYPES])];
 
   const [serviceType, setServiceType] = useState("");
   const [offeringType, setOfferingType] = useState("first offering");
@@ -75,6 +74,9 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const submit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    // Defensive: if the form is somehow open without the right permission,
+    // show the no-permission modal instead of letting the request fail.
+    if (!guarded(null, "offerings", mode === "edit" ? "update" : "create")) return;
     setIsSubmitting(true);
     setFormError(null);
 
@@ -112,10 +114,8 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) { setIsSubmitting(false); return; }
         await store?.updateOffering(initialData?._id, payload);
       } else {
-        if (!canCreate) { setIsSubmitting(false); return; }
         await store?.createOffering(payload);
       }
 
@@ -158,7 +158,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add service"
                     kind="serviceType"
@@ -167,7 +167,6 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                       setServiceType(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={serviceType}
@@ -186,7 +185,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add offering type"
                     kind="offeringType"
@@ -195,7 +194,6 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                       setOfferingType(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={offeringType}

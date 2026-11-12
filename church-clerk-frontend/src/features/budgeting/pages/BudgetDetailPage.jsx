@@ -815,16 +815,14 @@ function BudgetDetailPageInner() {
                 <div className="font-semibold text-gray-900 text-sm">Budget Items vs Actuals</div>
                 <div className="mt-0.5 text-gray-500 text-xs">Add categories and planned amounts. Actuals are pulled automatically from matching finance records within each item's dates — prefilled with the budget period. "Allocated To" narrows actuals to a specific entity — leave as church-wide otherwise.</div>
               </div>
-              {canEdit ? (
-                <button
+              {(<button
                   type="button"
-                  onClick={() => guarded(() => setAddModalOpen(true))}
+                  onClick={() => guarded(() => setAddModalOpen(true), "budgeting", "update")}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white text-xs hover:bg-blue-700 shrink-0"
                 >
                   <span className="text-base leading-none">+</span>
                   Add Item
-                </button>
-              ) : null}
+                </button>)}
             </div>
 
             <div className="overflow-x-auto">
@@ -896,14 +894,12 @@ function BudgetDetailPageInner() {
                             >
                               View
                             </button>
-                            {canEdit ? (
-                              <button
-                                onClick={() => guarded(() => setEditItem({ idx, data: it }))}
+                            {(<button
+                                onClick={() => guarded(() => setEditItem({ idx, data: it }), "budgeting", "update")}
                                 className="rounded px-2.5 py-1 border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50"
                               >
                                 Edit
-                              </button>
-                            ) : null}
+                              </button>)}
                           </div>
                         </td>
                       </tr>

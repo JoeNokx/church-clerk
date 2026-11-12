@@ -1,8 +1,9 @@
 import Program from "../../models/programModel.js";
 import { annotateDeletable } from "../../services/recordDependencyService.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 const getScopedChurchId = (req) => {
-  if (req.user?.role === "superadmin" || req.user?.role === "supportadmin") {
+  if (isSystemViewer(req)) {
     return null;
   }
   return req.activeChurch?._id || null;
@@ -290,7 +291,7 @@ const getUpcomingPrograms = async (req, res) => {
     };
 
     // Church scoping
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -421,7 +422,7 @@ const getOngoingPrograms = async (req, res) => {
     };
 
 // Church scope
-if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+if (!isSystemViewer(req)) {
   query.church = req.activeChurch._id;
 }
 
@@ -558,7 +559,7 @@ let query = {
 
 
     // Church scoping
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

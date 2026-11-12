@@ -61,8 +61,7 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
   const [detailsTab, setDetailsTab] = useState("attendance");
   const [fuVisitor, setFuVisitor] = useState(null);
 
-  const canView = useMemo(() => (typeof can === "function" ? can("visitors", "view") : false), [can]);
-  const canEdit = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? can("visitors", "read") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("visitors", "delete") : false), [can]);
   const canConvert = useMemo(() => (typeof can === "function" ? can("visitors", "convert") : false), [can]);
 
@@ -323,14 +322,14 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu forceKebab items={[
                     canView && { label: "View", onClick: () => openDetails(row) },
-                    canEdit && { label: "Schedule Follow-Up", onClick: () => guarded(() => setFuVisitor(row)) },
-                    canConvert && {
+                    { label: "Schedule Follow-Up", onClick: () => guarded(() => setFuVisitor(row), "visitors", "update") },
+                    {
                       label: row?.status === "converted" ? "Converted" : "Convert",
-                      onClick: () => guarded(() => { if (row?.status === "converted") return; openConvert(row); }),
+                      onClick: () => guarded(() => { if (row?.status === "converted") return; openConvert(row); }, "visitors", "convert"),
                       disabled: row?.status === "converted",
                     },
-                    canEdit && { label: "Edit", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); }) },
-                    canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }), danger: true }
+                    { label: "Edit", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); }, "visitors", "update") },
+                    row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }, "visitors", "delete"), danger: true }
                   ]} />
                 </td>
               </tr>

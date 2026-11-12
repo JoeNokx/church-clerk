@@ -4,6 +4,7 @@ import BusinessExpenses from "../../../models/financeModel/businessModel/busines
 
 import Member from "../../../models/memberModel.js";
 import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 const createBusinessVentures = async (req, res) => {
@@ -82,7 +83,7 @@ const getAllBusinessVentures = async (req, res) => {
         const query = {};
     
         // Restrict by church for non-admins
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        if (!isSystemViewer(req)) {
             query.church = req.activeChurch._id;
         }
 
@@ -188,7 +189,7 @@ const getSingleBusinessVentures = async (req, res) => {
          const {id} = req.params
             const query = {_id: id}
     
-            if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            if(!isSystemViewer(req)) {
                 query.church = req.activeChurch._id
             }
           const businessVentures = await BusinessVentures.findOne(query)
@@ -213,7 +214,7 @@ const updateBusinessVentures = async (req, res) => {
          const {id} = req.params
                 const query = {_id: id}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
 
@@ -265,7 +266,7 @@ const deleteBusinessVentures = async (req, res) => {
         const {id} = req.params
                 const query = {_id: id}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
         
@@ -290,7 +291,7 @@ const getAllBusinessKPI = async(req, res) => {
     try {
 
     const query = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

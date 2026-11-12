@@ -18,7 +18,7 @@ const jo = {
   "email": "joseph@gracelife.org",
   "phoneNumber": "0541234567",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "65ff9a0c1e9b6b0cdd123456"
 }
 
@@ -43,7 +43,7 @@ const Daniel = {
   "email": "apostle@globalfaith.org",
   "phoneNumber": "0551112222",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "65ff9a99abc123abc999000"
 }
 
@@ -69,7 +69,7 @@ const ed = {
   "email": "ed@glorylife.org",
   "phoneNumber": "0594943333",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "null" || "695cf7923705d096932e48ec",
 
   "_id": "695ce9aeab37a20fc5c56819"
@@ -94,7 +94,7 @@ const sam = {
   "email": "sam@glorylife.org",
   "phoneNumber": "05946943333",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "null"
 }
 
@@ -117,7 +117,7 @@ const ruth = {
   "email": "ruth@glorylife.org",
   "phoneNumber": "05986943333",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "null",
 
           "_id": "695d1773765f3fe779dbc3d0"
@@ -151,7 +151,7 @@ const Michael = {
   "email": "michael@globalfaithkumasi.org",
   "phoneNumber": "0594443333",
   "password": "Password123!",
-  "role": "churchadmin",
+  "role": "churchclerkadmin",
   "churchId": "695ae1b227c9bea1e881bc9f"
 }
 

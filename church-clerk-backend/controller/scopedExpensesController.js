@@ -6,6 +6,7 @@ import Ministry from "../models/organisationModel/ministryModel.js";
 import Program from "../models/programModel.js";
 import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
 import { uploadReceiptImage, destroyReceiptImage, receiptImageDownloadUrl, validateReceiptImage } from "../services/receiptService.js";
+import { isSystemViewer } from "../utils/resolvePermissions.js";
 
 // Scope config: scope key -> { scopeField on GeneralExpenses, parent model, route param, label }
 const SCOPES = {
@@ -19,7 +20,7 @@ const SCOPES = {
 
 const SCOPE_FIELDS = ["group", "cell", "department", "ministry", "event", "outreach"];
 
-const isPrivileged = (req) => req.user.role === "superadmin" || req.user.role === "supportadmin";
+const isPrivileged = (req) => isSystemViewer(req);
 
 const resolveParent = async (req, scopeKey) => {
   const scope = SCOPES[scopeKey];

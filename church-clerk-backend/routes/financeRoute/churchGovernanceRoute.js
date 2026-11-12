@@ -4,7 +4,10 @@ import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
+import { requirePermission } from "../../middleware/permissionMiddleware.js";
 import ApprovalRequest from "../../models/financeModel/governance/approvalRequestModel.js";
+import Church from "../../models/churchModel.js";
+import { getChurchGovernanceFlags } from "../../services/finance/governanceService.js";
 import { approveRequest, rejectRequest } from "../../services/finance/governanceService.js";
 
 const router = express.Router();
@@ -16,7 +19,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "read"),
   async (req, res) => {
     try {
       const { status, page = 1, limit = 20 } = req.query;
@@ -52,6 +56,49 @@ router.get(
   }
 );
 
+// GET /api/v1/church-governance/flags — this church's governance rules
+router.get(
+  "/flags",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "read"),
+  async (req, res) => {
+    try {
+      return res.json(getChurchGovernanceFlags(req.activeChurch));
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+// PATCH /api/v1/church-governance/flags — per-church preference; both flags
+// default ON for churches that never set them.
+router.patch(
+  "/flags",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "update"),
+  async (req, res) => {
+    try {
+      const { enforceBackdating, enforceImmutability } = req.body || {};
+      const update = {};
+      if (enforceBackdating !== undefined) update["governance.enforceBackdating"] = Boolean(enforceBackdating);
+      if (enforceImmutability !== undefined) update["governance.enforceImmutability"] = Boolean(enforceImmutability);
+      if (!Object.keys(update).length) return res.status(400).json({ message: "Nothing to update" });
+      const church = await Church.findByIdAndUpdate(req.activeChurch._id, { $set: update }, { new: true }).select("governance").lean();
+      return res.json(getChurchGovernanceFlags(church));
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+);
+
 // POST /api/v1/church-governance/:id/approve
 router.post(
   "/:id/approve",
@@ -59,7 +106,8 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "approve"),
   async (req, res) => {
     try {
       const existing = await ApprovalRequest.findOne({ _id: req.params.id, church: req.activeChurch._id });
@@ -79,7 +127,8 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "approve"),
   async (req, res) => {
     try {
       const existing = await ApprovalRequest.findOne({ _id: req.params.id, church: req.activeChurch._id });
@@ -99,7 +148,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("financeGovernance", "read"),
   async (req, res) => {
     try {
       const pending = await ApprovalRequest.countDocuments({ church: req.activeChurch._id, status: "PENDING_APPROVAL" });

@@ -94,7 +94,7 @@ function MemberFormPageInner() {
       if (branchViewOnly) {
         showLockModal(
           "You are viewing this branch from your headquarters account. Branch data is read-only — return to your headquarters context to make changes.",
-          { payButton: false }
+          { payButton: false, title: "Read-Only View" }
         );
       } else {
         showLockModal();
@@ -491,13 +491,21 @@ function MemberFormPageInner() {
 
     try {
       if (pageMode === "edit") {
-        if (!canEdit) { setIsSubmitting(false); return; }
+        if (!canEdit) {
+          setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         await store?.updateMember(memberId, payload);
         if (photoFile) {
           try { await uploadMemberPhoto(memberId, photoFile); } catch (_) {}
         }
       } else {
-        if (!canCreate) { setIsSubmitting(false); return; }
+        if (!canCreate) {
+          setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
         const res = await apiCreateMember(payload);
         const newId = res?.data?.data?._id || res?.data?.member?._id || res?.data?._id;
         if (photoFile && newId) {

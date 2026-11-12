@@ -334,15 +334,13 @@ export default function TeamDetailsPage() {
                 <div className="text-gray-500 text-xs">All members in this team</div>
               </div>
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
-                {canWrite ? (
-                  <button
-                    onClick={() => guarded(() => setAddMemberOpen(true))}
+                {(<button
+                    onClick={() => guarded(() => setAddMemberOpen(true), "outreach", "update")}
                     className="h-9 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                     Add Member
-                  </button>
-                ) : null}
+                  </button>)}
                 <FilterBar
                   searchValue={memberSearch}
                   onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}

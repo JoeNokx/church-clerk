@@ -69,16 +69,14 @@ function ProgramsPageInner() {
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Programs</h2>
           <div className="shrink-0">
-            {canCreate ? (
-              <button
+            {(<button
                 type="button"
-                onClick={() => guarded(() => setCreateOpen(true))}
+                onClick={() => guarded(() => setCreateOpen(true), "programs", "create")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
                 Create Program
-              </button>
-            ) : null}
+              </button>)}
           </div>
         </div>
         <p className="mt-2 text-gray-600 text-sm hidden md:block">Search and manage church programs</p>

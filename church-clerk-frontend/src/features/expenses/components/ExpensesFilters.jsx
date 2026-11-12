@@ -13,7 +13,6 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -48,7 +47,10 @@ function ExpensesFilters() {
   };
 
   const { values: lookupCategories } = useLookupValues("generalExpenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = useMemo(
+    () => [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])],
+    [lookupCategories]
+  );
 
   const appliedDateFrom = store?.filters?.dateFrom || "";
   const appliedDateTo = store?.filters?.dateTo || "";

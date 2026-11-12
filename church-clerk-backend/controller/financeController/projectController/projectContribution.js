@@ -1,5 +1,6 @@
 import ProjectContribution from "../../../models/financeModel/projectModel/projectContributionModel.js";
 import ChurchProject from "../../../models/financeModel/projectModel/churchProjectModel.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 const createProjectContributions = async (req, res) => {
@@ -17,7 +18,7 @@ const createProjectContributions = async (req, res) => {
                 
 
                 const query = { _id: projectId };
-                if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if (!isSystemViewer(req)) {
                 query.church = req.activeChurch._id;
                 }
 
@@ -68,7 +69,7 @@ const getAllProjectContributions = async (req, res) => {
                 const query = {churchProject: projectId};
             
                 // Restrict by church for non-admins
-                if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if (!isSystemViewer(req)) {
                     query.church = req.activeChurch._id;
                 }
             
@@ -172,7 +173,7 @@ const updateProjectContributions = async (req, res) => {
 
          const query = {_id: contributionId, churchProject: projectId}
         
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+                if(!isSystemViewer(req)) {
                     query.church = req.activeChurch._id
                 }
         
@@ -205,7 +206,7 @@ const query = {
   churchProject: projectId
 };
 
-if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+if (!isSystemViewer(req)) {
   query.church = req.activeChurch._id;
 }
 

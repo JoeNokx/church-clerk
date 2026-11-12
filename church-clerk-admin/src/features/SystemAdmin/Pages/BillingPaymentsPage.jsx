@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetPayments, adminVerifyPayment } from "../Services/adminBilling.api.js";
+import { useAuth } from "../../Auth/useAuth.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -17,6 +18,7 @@ const fmtDateTime = (v) => {
 };
 
 function BillingPaymentsPage() {
+  const { guardPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -196,7 +198,7 @@ function BillingPaymentsPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => onVerify(p?._id)}
+                        onClick={() => guardPermission("systemBilling", "update", () => onVerify(p?._id))}
                       >
                         Verify
                       </Button>

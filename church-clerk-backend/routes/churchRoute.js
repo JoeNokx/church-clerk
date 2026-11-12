@@ -15,7 +15,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsChurchProfile", "read"),
   getMyChurchProfile
 ); 
@@ -26,7 +26,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsChurchProfile", "update"),
   uploadMemoryFile.single("logo"),
   updateMyChurchProfile
@@ -37,7 +37,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranches
 );
@@ -47,7 +47,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranchesConsolidated
 );
@@ -57,7 +57,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranchMembers
 );
@@ -67,7 +67,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranchAttendance
 );
@@ -77,7 +77,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranchFinances
 );
@@ -87,7 +87,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("branches", "read"),
   getMyBranchPerformance
 );
@@ -97,7 +97,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsChurchProfile", "read"),
   getActiveChurchContext
 );
@@ -108,7 +108,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsChurchProfile", "update"),
   requestMyChurchSenderId
 );
@@ -121,7 +121,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "read"),
   getMyRegistrationToken
 );
 
@@ -130,7 +132,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "update"),
   generateRegistrationToken
 );
 
@@ -139,7 +143,9 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "update"),
   revokeRegistrationToken
 );
 
@@ -148,7 +154,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "read"),
   getMyQrRegistrationToken
 );
 
@@ -157,7 +165,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "update"),
   generateQrRegistrationToken
 );
 
@@ -166,7 +176,9 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("churchadmin"),
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsChurchProfile", "update"),
   revokeQrRegistrationToken
 );
 

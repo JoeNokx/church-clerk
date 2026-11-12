@@ -1,5 +1,6 @@
 import Program from "../../models/programModel.js";
 import ProgramAttendees from "../../models/programModel/programAttendeesModel.js";
+import { isSystemViewer } from "../../utils/resolvePermissions.js";
 
 // GET SINGLE
 const getSingleProgram = async (req, res) => {
@@ -7,7 +8,7 @@ const getSingleProgram = async (req, res) => {
     const programId = req.params.id;
     const query = { _id: programId };
 
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

@@ -15,7 +15,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("churchadmin"),
+  authorizeRoles("churchclerkadmin"),
   requirePermission("settingsAuditLog", "read"),
   getAllActivityLogs
 );
@@ -26,7 +26,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("churchadmin"),
+  authorizeRoles("churchclerkadmin"),
   requirePermission("settingsAuditLog", "read"),
   getActivityLogMeta
 );
@@ -36,8 +36,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("churchadmin"),
-  requirePermission("settingsAuditLog", "view"),
+  authorizeRoles("churchclerkadmin"),
+  requirePermission("settingsAuditLog", "read"),
   getSingleActivityLog
 );
 

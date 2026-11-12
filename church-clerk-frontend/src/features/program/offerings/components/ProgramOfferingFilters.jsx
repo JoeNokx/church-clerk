@@ -6,11 +6,9 @@ import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 const DEFAULT_OFFERING_TYPES = [
+  "main offering",
   "first offering",
-  "second offering",
-  "third offering",
-  "fourth offering",
-  "fifth offering"
+  "second offering"
 ];
 
 const DEFAULT_SEED_TYPES = [
@@ -25,7 +23,7 @@ function ProgramOfferingFilters() {
   const { values: lookupOfferingTypes } = useLookupValues("offeringType");
   const { values: lookupSeedTypes } = useLookupValues("seedType");
   const offeringTypeOptions = useMemo(() => {
-    const offering = lookupOfferingTypes?.length ? lookupOfferingTypes : DEFAULT_OFFERING_TYPES;
+    const offering = [...new Set([...(lookupOfferingTypes || []), ...DEFAULT_OFFERING_TYPES])];
     return [...new Set([...offering, ...(lookupSeedTypes || []), ...DEFAULT_SEED_TYPES])];
   }, [lookupOfferingTypes, lookupSeedTypes]);
 

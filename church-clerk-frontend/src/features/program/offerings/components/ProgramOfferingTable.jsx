@@ -111,7 +111,7 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
       onClearDate: clearDate,
     });
     const isZero = reason === "zero";
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
     return (
       <EmptyState
         illustration={isZero ? "offering" : "search"}
@@ -120,7 +120,7 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
           ? "Record the first offering collected for this program."
           : "We couldn't find any offerings matching your search or filters."}
         actionLabel={showAdd ? "Add Offering" : recovery?.actionLabel}
-        onAction={showAdd ? () => guarded(onCreate) : recovery?.onAction}
+        onAction={showAdd ? () => guarded(onCreate, "programs", "create") : recovery?.onAction}
         secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
         onSecondary={showAdd ? null : recovery?.onSecondary}
       />
@@ -156,7 +156,7 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => openView(offering) },
-                    canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; guarded(() => onEdit?.(offering)); } }
+                    { label: "Edit", onClick: () => { if (!offering?._id) return; guarded(() => onEdit?.(offering), "programs", "update"); } }
                   ]} />
                 </td>
               </tr>

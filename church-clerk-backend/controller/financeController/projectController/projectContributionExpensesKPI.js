@@ -3,6 +3,7 @@ import ProjectContribution from "../../../models/financeModel/projectModel/proje
 import ProjectExpenses from "../../../models/financeModel/projectModel/projectExpenseModel.js";
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js";
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 const getProjectContributionExpensesKPI = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ const getProjectContributionExpensesKPI = async (req, res) => {
     // BASE QUERY
     const query = { churchProject: projectId };
 
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

@@ -81,16 +81,15 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
           </div>
 
           <div className="flex items-center gap-3">
-            {canCreate && (
-              <button
+            {<button
                 type="button"
-                onClick={() => guarded(openCreate)}
+                onClick={() => guarded(openCreate, "specialFunds", "create")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Fund
               </button>
-            )}
+            }
           </div>
         </div>
       )}

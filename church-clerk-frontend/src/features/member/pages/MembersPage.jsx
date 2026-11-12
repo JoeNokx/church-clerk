@@ -150,7 +150,7 @@ function MembersPageInner() {
 
   const isChurchAdmin = useMemo(() => {
     const raw = String(user?.role || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
-    return raw === "churchadmin";
+    return raw === "churchclerkadmin";
   }, [user?.role]);
 
   const [regLinkOpen, setRegLinkOpen] = useState(false);
@@ -503,8 +503,7 @@ function MembersPageInner() {
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">
           {/* Single Add Member button with popup — all items inside are writes; hide entirely when read-only */}
-          {canEditChurch ? (
-          <div className="relative">
+          {(<div className="relative">
             <div className="inline-flex rounded-lg bg-blue-600 shadow-sm overflow-hidden">
               <button
                 type="button"
@@ -517,7 +516,7 @@ function MembersPageInner() {
               <div className="w-0.5 bg-white/40 my-1.5" />
               <button
                 type="button"
-                onClick={() => setMobileAddOpen((v) => !v)}
+                onClick={() => guarded(() => setMobileAddOpen((v) => !v))}
                 className="cck-allow-icons inline-flex items-center px-2.5 py-2.5 font-semibold text-white hover:bg-blue-700 active:bg-blue-800 text-sm"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -527,53 +526,44 @@ function MembersPageInner() {
             </div>
             {mobileAddOpen ? (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setMobileAddOpen(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => guarded(() => setMobileAddOpen(false))} />
                 <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                  {canCreate ? (
-                    <button
+                  {(<button
                       type="button"
-                      onClick={() => guarded(() => { setMobileAddOpen(false); openCreate(); })}
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openCreate(); }, "members", "create")}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
                       className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
                       Register Member
-                    </button>
-                  ) : null}
-                  {isChurchAdmin && canEditChurch ? (
-                    <button
+                    </button>)}
+                  <button
+                    type="button"
+                    onClick={() => guarded(() => { setMobileAddOpen(false); openRegLink(); }, "settingsChurchProfile", "update")}
+                    style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                    className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                  >
+                    Registration Link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => guarded(() => { setMobileAddOpen(false); openQr(); }, "settingsChurchProfile", "update")}
+                    style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                    className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                  >
+                    QR Code
+                  </button>
+                  {(<button
                       type="button"
-                      onClick={() => guarded(() => { setMobileAddOpen(false); openRegLink(); })}
-                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-                    >
-                      Registration Link
-                    </button>
-                  ) : null}
-                  {isChurchAdmin && canEditChurch ? (
-                    <button
-                      type="button"
-                      onClick={() => guarded(() => { setMobileAddOpen(false); openQr(); })}
-                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-                    >
-                      QR Code
-                    </button>
-                  ) : null}
-                  {canImport ? (
-                    <button
-                      type="button"
-                      onClick={() => guarded(() => { setMobileAddOpen(false); openImport(); })}
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openImport(); }, "members", "import")}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
                       className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     >
                       Import Members
-                    </button>
-                  ) : null}
+                    </button>)}
                 </div>
               </>
             ) : null}
-          </div>
-          ) : null}
+          </div>)}
         </div>
       </div>
 
@@ -676,7 +666,7 @@ function MembersPageInner() {
         <MemberTable onDeleted={refreshMembers} onCreate={openCreate} />
       </div>
 
-      {canImport && importOpen ? (
+      {importOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-3xl rounded-xl bg-white shadow-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
@@ -690,7 +680,7 @@ function MembersPageInner() {
               </div>
               <button
                 type="button"
-                onClick={() => setImportOpen(false)}
+                onClick={() => guarded(() => setImportOpen(false), "members", "import")}
                 className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shrink-0 md:h-12 md:w-12"
                 aria-label="Close"
               >
@@ -714,7 +704,7 @@ function MembersPageInner() {
                       <button
                         type="button"
                         disabled={importLoading}
-                        onClick={downloadTemplate}
+                        onClick={() => guarded(downloadTemplate, "members", "import")}
                         className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                       >
                         {importLoading ? "Working…" : "Download Template"}
@@ -732,23 +722,23 @@ function MembersPageInner() {
                         accept=".xlsx,.xls,.csv"
                         disabled={importLoading}
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={() => guarded((e) => {
                           const f = e.target.files?.[0] || null;
                           onPickFile(f);
-                        }}
+                        }, "members", "import")}
                       />
                       <button
                         type="button"
                         disabled={importLoading}
-                        onClick={() => importFileInputRef.current?.click()}
-                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                        onDrop={(e) => {
+                        onClick={() => guarded(() => importFileInputRef.current?.click(), "members", "import")}
+                        onDragOver={() => guarded((e) => { e.preventDefault(); e.stopPropagation(); }, "members", "import")}
+                        onDrop={() => guarded((e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           if (importLoading) return;
                           const f = e.dataTransfer?.files?.[0] || null;
                           onPickFile(f);
-                        }}
+                        }, "members", "import")}
                         className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 transition-colors cursor-pointer"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-blue-500">
@@ -787,11 +777,11 @@ function MembersPageInner() {
                         <button
                           type="button"
                           disabled={importLoading}
-                          onClick={() => {
+                          onClick={() => guarded(() => {
                             setImportStep("upload");
                             setImportPreview(null);
                             setImportResult(null);
-                          }}
+                          }, "members", "import")}
                           className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                         >
                           Choose another file
@@ -799,7 +789,7 @@ function MembersPageInner() {
                         <button
                           type="button"
                           disabled={importLoading || !(importPreview?.summary?.valid > 0)}
-                          onClick={runImport}
+                          onClick={() => guarded(runImport, "members", "import")}
                           className="whitespace-nowrap rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                         >
                           {importLoading ? "Importing…" : "Import Valid Rows"}
@@ -815,7 +805,7 @@ function MembersPageInner() {
                         rows={importPreview.invalidRows}
                         showReasons
                         tone="error"
-                        onEdit={openEditRow}
+                        onEdit={() => guarded(openEditRow, "members", "import")}
                       />
                     ) : null}
                     <ImportDataTable
@@ -847,7 +837,7 @@ function MembersPageInner() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setImportOpen(false)}
+                          onClick={() => guarded(() => setImportOpen(false), "members", "import")}
                           className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
                         >
                           Done

@@ -12,7 +12,10 @@ function WelfareDisbursementFilters() {
   const store = useContext(WelfareContext);
 
   const { values: lookupCategories } = useLookupValues("welfareDisbursementCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = useMemo(
+    () => [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])],
+    [lookupCategories]
+  );
 
   const [searchValue, setSearchValue] = useState(store?.disbursementFilters?.search || "");
 

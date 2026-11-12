@@ -1,5 +1,6 @@
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js";
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 const syncPledgeStatus = async ({ pledgeId, churchId }) => {
   const pledgeQuery = { _id: pledgeId };
@@ -52,7 +53,7 @@ const createPledgePayment = async (req, res) => {
     }
 
     const pledgeQuery = { _id: pledgeId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       pledgeQuery.church = req.activeChurch._id;
     }
 
@@ -73,7 +74,7 @@ const createPledgePayment = async (req, res) => {
 
     await syncPledgeStatus({
       pledgeId,
-      churchId: req.user.role !== "superadmin" && req.user.role !== "supportadmin" ? req.activeChurch._id : null
+      churchId: !isSystemViewer(req) ? req.activeChurch._id : null
     });
 
     console.log("Payment recorded successfully")
@@ -99,7 +100,7 @@ const getAllPledgePayments = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const pledgeQuery = { _id: pledgeId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       pledgeQuery.church = req.activeChurch._id;
     }
 
@@ -112,7 +113,7 @@ const getAllPledgePayments = async (req, res) => {
     const query = { pledge: pledge._id };
 
     // Restrict by church for non-admins
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -197,7 +198,7 @@ const updatePledgePayment = async (req, res) => {
     const updates = req.body;
 
     const query = { _id: id, pledge: pledgeId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -213,7 +214,7 @@ const updatePledgePayment = async (req, res) => {
 
     await syncPledgeStatus({
       pledgeId,
-      churchId: req.user.role !== "superadmin" && req.user.role !== "supportadmin" ? req.activeChurch._id : null
+      churchId: !isSystemViewer(req) ? req.activeChurch._id : null
     });
 
     return res.status(200).json({
@@ -231,7 +232,7 @@ const deletePledgePayment = async (req, res) => {
     const { pledgeId, id } = req.params;
 
     const query = { _id: id, pledge: pledgeId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 
@@ -243,7 +244,7 @@ const deletePledgePayment = async (req, res) => {
 
     await syncPledgeStatus({
       pledgeId,
-      churchId: req.user.role !== "superadmin" && req.user.role !== "supportadmin" ? req.activeChurch._id : null
+      churchId: !isSystemViewer(req) ? req.activeChurch._id : null
     });
 
     return res.status(200).json({

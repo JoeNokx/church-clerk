@@ -1,13 +1,11 @@
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
 import Notification from "../models/notificationModel.js";
+import { isSystemRole } from "../utils/resolvePermissions.js";
 
 const churchUserRoles = [
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader"
+  "churchclerkadmin",
+  
 ];
 
 const normalizeRole = (role) => {
@@ -43,7 +41,7 @@ export function impersonationNotificationMiddleware(req, res, next) {
         if (!activeChurch?._id) return;
 
         const role = normalizeRole(user?.role);
-        if (role === "superadmin" || role === "supportadmin") return;
+        if (await isSystemRole(role)) return;
 
         if (!user?.church) return;
 

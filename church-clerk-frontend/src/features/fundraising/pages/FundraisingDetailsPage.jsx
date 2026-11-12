@@ -96,7 +96,6 @@ const EXPENSE_CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -387,7 +386,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
   const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : EXPENSE_CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...EXPENSE_CATEGORY_OPTIONS])];
 
   useEffect(() => {
     if (!open) return;
@@ -637,7 +636,7 @@ function FundraisingDetailsPage() {
   const debouncedExpenseSearch = useDebouncedValue(expenseSearch, 300);
 
   const { values: lookupExpenseCategories } = useLookupValues("expenseCategory");
-  const expenseCategoryOptions = lookupExpenseCategories?.length ? lookupExpenseCategories : EXPENSE_CATEGORY_OPTIONS;
+  const expenseCategoryOptions = [...new Set([...(lookupExpenseCategories || []), ...EXPENSE_CATEGORY_OPTIONS])];
 
   const loadKpi = async () => {
     if (!projectId) return;
@@ -898,16 +897,14 @@ function FundraisingDetailsPage() {
                 dateTo={contribDateTo}
                 onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
               >
-                {canWrite ? (
-                  <button
-                    type="button"
-                    onClick={() => guarded(openCreateContribution)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add Contributor
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => guarded(openCreateContribution)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Contributor
+                </button>
               </FilterBar>
               <MobileFilterBar
                 searchValue={contribSearch}
@@ -964,16 +961,14 @@ function FundraisingDetailsPage() {
                 dateTo={expenseDateTo}
                 onDateApply={(from, to) => { setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1); }}
               >
-                {canWrite ? (
-                  <button
-                    type="button"
-                    onClick={() => guarded(openCreateExpense)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Record Expense
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => guarded(openCreateExpense)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Record Expense
+                </button>
               </FilterBar>
               <MobileFilterBar
                 searchValue={expenseSearch}
@@ -1077,11 +1072,11 @@ function FundraisingDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={isPledge ? [
                               { label: "View", onClick: () => setPledgeModal({ id: row._id, view: "details" }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              canWrite && { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              canWrite && { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              { label: "Pay", onClick: () => guarded(() => setPayPledge(row), "fundraising", "update"), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row), "fundraising", "update"), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ] : [
                               { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              canWrite && { label: "Edit", onClick: () => guarded(() => openEditContribution(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              { label: "Edit", onClick: () => guarded(() => openEditContribution(row), "fundraising", "update"), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>
@@ -1157,7 +1152,7 @@ function FundraisingDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setExpenseViewRow(row); setExpenseViewOpen(true); }, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              canWrite && { label: "Edit", onClick: () => guarded(() => openEditExpense(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              { label: "Edit", onClick: () => guarded(() => openEditExpense(row), "fundraising", "update"), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>

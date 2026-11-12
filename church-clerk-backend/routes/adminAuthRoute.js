@@ -6,28 +6,25 @@ import { protectAdmin } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { adminLoginSchema, adminRegisterSchema } from "../validators/auth.js";
 import { loginLimiter, registerLimiter } from "../middleware/rateLimiters.js";
-import authorizeRoles from "../middleware/roleMiddleware.js";
+import { requireUserRole } from "../middleware/roleMiddleware.js";
+import requireSystemRole from "../middleware/requireSystemRole.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 
 router.post("/login", loginLimiter, validateRequest(adminLoginSchema), loginSystemAdmin);
-router.put("/me/email", protectAdmin, attachPermissions, authorizeRoles("superadmin", "supportadmin"), changeAdminEmail);
+router.put("/me/email", protectAdmin, requireSystemRole, changeAdminEmail);
 router.post("/forgot-password", loginLimiter, forgotAdminPassword);
 router.post("/reset-password", resetAdminPassword);
 router.get(
   "/me",
   protectAdmin,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin"),
-  requirePermission("dashboard", "read"),
+  requireSystemRole,
   getSystemAdminMe
 );
 router.post(
   "/logout",
   protectAdmin,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin"),
-  requirePermission("dashboard", "read"),
   logoutSystemAdmin
 );
 router.post(
@@ -35,8 +32,8 @@ router.post(
   registerLimiter,
   protectAdmin,
   attachPermissions,
-  authorizeRoles("superadmin"),
-  requirePermission("settingsUsersRoles", "create"),
+  requireUserRole("superadmin"),
+  requirePermission("systemUsers", "create"),
   validateRequest(adminRegisterSchema),
   registerSystemAdmin
 );

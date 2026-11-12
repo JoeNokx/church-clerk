@@ -1,7 +1,7 @@
 import express from "express";
 
 import { protectAdmin } from "../middleware/authMiddleware.js";
-import requireSuperAdmin from "../middleware/requireSuperAdmin.js";
+import requireSystemRole from "../middleware/requireSystemRole.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 
@@ -30,33 +30,33 @@ const router = express.Router();
 
 router.use(protectAdmin);
 router.use(attachPermissions);
-router.use(requireSuperAdmin);
+router.use(requireSystemRole);
 
-router.post("/plans", requirePermission("billing", "create"), createPlan);
-router.get("/plans", requirePermission("billing", "read"), getPlans);
-router.put("/plans/:id", requirePermission("billing", "update"), updatePlan);
-router.delete("/plans/:id", requirePermission("billing", "delete"), deletePlan);
+router.post("/plans", requirePermission("systemBilling", "create"), createPlan);
+router.get("/plans", requirePermission("systemBilling", "read"), getPlans);
+router.put("/plans/:id", requirePermission("systemBilling", "update"), updatePlan);
+router.delete("/plans/:id", requirePermission("systemBilling", "delete"), deletePlan);
 
-router.get("/subscriptions", requirePermission("billing", "read"), getSubscriptions);
+router.get("/subscriptions", requirePermission("systemBilling", "read"), getSubscriptions);
 
-router.put("/subscriptions/:id", requirePermission("billing", "update"), updateSubscription);
-router.post("/subscriptions/:id/suspend", requirePermission("billing", "update"), adminSuspendSubscription);
-router.post("/subscriptions/:id/resume", requirePermission("billing", "update"), adminResumeSubscription);
-router.delete("/subscriptions/:id", requirePermission("billing", "delete"), adminDeleteSubscription);
+router.put("/subscriptions/:id", requirePermission("systemBilling", "update"), updateSubscription);
+router.post("/subscriptions/:id/suspend", requirePermission("systemBilling", "update"), adminSuspendSubscription);
+router.post("/subscriptions/:id/resume", requirePermission("systemBilling", "update"), adminResumeSubscription);
+router.delete("/subscriptions/:id", requirePermission("systemBilling", "delete"), adminDeleteSubscription);
 
-router.get("/payments", requirePermission("billing", "read"), getPayments);
-router.post("/payments/:id/verify", requirePermission("billing", "update"), verifyPayment);
+router.get("/payments", requirePermission("systemBilling", "read"), getPayments);
+router.post("/payments/:id/verify", requirePermission("systemBilling", "update"), verifyPayment);
 
-router.get("/revenue", requirePermission("billing", "read"), getRevenueStats);
+router.get("/revenue", requirePermission("systemBilling", "read"), getRevenueStats);
 
-router.get("/invoices", requirePermission("billing", "read"), getInvoices);
-router.post("/invoices", requirePermission("billing", "create"), createInvoice);
-router.put("/invoices/:id/status", requirePermission("billing", "update"), markInvoiceStatus);
-router.get("/invoices/:id/download", requirePermission("billing", "read"), downloadInvoice);
+router.get("/invoices", requirePermission("systemBilling", "read"), getInvoices);
+router.post("/invoices", requirePermission("systemBilling", "create"), createInvoice);
+router.put("/invoices/:id/status", requirePermission("systemBilling", "update"), markInvoiceStatus);
+router.get("/invoices/:id/download", requirePermission("systemBilling", "read"), downloadInvoice);
 
-router.get("/webhook-logs", requirePermission("billing", "read"), getWebhookLogs);
+router.get("/webhook-logs", requirePermission("systemBilling", "read"), getWebhookLogs);
 
-router.post("/test/run-billing-cron", async (req, res) => {
+router.post("/test/run-billing-cron", requirePermission("systemBilling", "runCycle"), async (req, res) => {
   try {
     console.log("[AdminRoute] Manual billing cron triggered");
     await runDailyBillingJob();

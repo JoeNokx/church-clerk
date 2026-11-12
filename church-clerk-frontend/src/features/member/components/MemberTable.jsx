@@ -130,10 +130,8 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
   const [confirmId, setConfirmId] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(null);
 
-  const canView = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
-  const canEdit = useMemo(() => (typeof can === "function" ? can("members", "update") : false), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? can("members", "read") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("members", "delete") : false), [can]);
-  const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
 
   const clearSearch = () => {
     store?.setFilters?.({ search: "", page: 1 });
@@ -257,9 +255,9 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
       ? "Add your first member to start building your church directory."
       : "We couldn't find any members matching your current search or filters.";
 
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
     const actionLabel = showAdd ? "Add Member" : recovery?.actionLabel;
-    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate, "members", "create") : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -321,8 +319,8 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize">{row?.ageGroup || <span className="text-gray-400 italic">Not Specified</span>}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || <span className="text-gray-400 italic">Not Specified</span>}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                    {canEdit ? (
-                      <InlineStatusPicker row={row} onUpdate={updateStatus} updating={statusUpdating} />
+                    {true ? (
+                      <InlineStatusPicker row={row} onUpdate={() => guarded(updateStatus, "members", "update")} updating={statusUpdating} />
                     ) : (
                       <StatusChip value={row?.status} />
                     )}
@@ -331,8 +329,8 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       canView && { label: "View", onClick: () => { if (!row?._id) return; toPage("member-details", { id: row._id }, { state: { from: "members" } }); } },
-                      canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; toPage("member-form", { id: row._id }); }) },
-                      canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }), danger: true }
+                      { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; toPage("member-form", { id: row._id }); }, "members", "update") },
+                      row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }, "members", "delete"), danger: true }
                     ]} />
                   </td>
                 </tr>

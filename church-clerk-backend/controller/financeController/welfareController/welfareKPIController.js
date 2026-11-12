@@ -1,5 +1,6 @@
 import WelfareDisbursements from "../../../models/financeModel/welfareModel/welfareDisbursementModel.js"
 import WelfareContributions from "../../../models/financeModel/welfareModel/welfareContributionModel.js"
+import { isSystemViewer } from "../../../utils/resolvePermissions.js";
 
 
 const getWelfareKPI = async (req, res) => {
@@ -16,7 +17,7 @@ const getWelfareKPI = async (req, res) => {
 
     // ---- Query ----
     const query = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+    if (!isSystemViewer(req)) {
       query.church = req.activeChurch._id;
     }
 

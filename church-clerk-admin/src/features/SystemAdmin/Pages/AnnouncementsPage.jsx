@@ -24,8 +24,10 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
+import { useAuth } from "../../Auth/useAuth.js";
 
 function AnnouncementsPage() {
+  const { guardPermission } = useAuth();
   const [tab, setTab] = useState("support");
   const [commTab, setCommTab] = useState("compose");
 
@@ -544,7 +546,7 @@ function AnnouncementsPage() {
                 <div className="flex items-center justify-end gap-2">
                   <Button
                     variant="primary"
-                    onClick={onSave}
+                    onClick={() => guardPermission("systemBilling", "update", onSave)}
                     disabled={loading || saving}
                     loading={saving}
                     loadingText="Saving…"
@@ -921,7 +923,7 @@ function AnnouncementsPage() {
                   ) : null}
                   <Button
                     variant="primary"
-                    onClick={onComposeSubmit}
+                    onClick={() => guardPermission("announcements", composeEditingId ? "update" : "create", onComposeSubmit)}
                     disabled={composeSaving}
                     loading={composeSaving}
                     loadingText="Saving…"
@@ -967,14 +969,14 @@ function AnnouncementsPage() {
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  onClick={() => guardPermission("announcements", "update", () => populateComposeFromRow(r, { mode: "edit" }))}
                                   className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                   Edit
                                 </button>
                               <button
                                 type="button"
-                                onClick={() => setDeleteConfirmModal({ row: r, kind: "scheduled" })}
+                                onClick={() => guardPermission("announcements", "delete", () => setDeleteConfirmModal({ row: r, kind: "scheduled" }))}
                                 className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                               >
                                 Delete
@@ -1041,14 +1043,14 @@ function AnnouncementsPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  onClick={() => guardPermission("announcements", "update", () => populateComposeFromRow(r, { mode: "edit" }))}
                                   className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "draft" })}
+                                  onClick={() => guardPermission("announcements", "delete", () => setDeleteConfirmModal({ row: r, kind: "draft" }))}
                                   className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                   Delete
@@ -1112,14 +1114,14 @@ function AnnouncementsPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  onClick={() => guardPermission("announcements", "update", () => populateComposeFromRow(r, { mode: "edit" }))}
                                   className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "template" })}
+                                  onClick={() => guardPermission("announcements", "delete", () => setDeleteConfirmModal({ row: r, kind: "template" }))}
                                   className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                   Delete
@@ -1184,7 +1186,7 @@ function AnnouncementsPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "history" })}
+                                  onClick={() => guardPermission("announcements", "delete", () => setDeleteConfirmModal({ row: r, kind: "history" }))}
                                   className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                   Delete
@@ -1304,7 +1306,7 @@ function AnnouncementsPage() {
                                 <button
                                   type="button"
                                   disabled={srUpdatingId === r?._id}
-                                  onClick={() => handleSrStatusUpdate(r._id, "resolved")}
+                                  onClick={() => guardPermission("systemSupport", "update", () => handleSrStatusUpdate(r._id, "resolved"))}
                                   className="rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
                                 >
                                   Resolve
@@ -1411,7 +1413,7 @@ function AnnouncementsPage() {
                     key={s}
                     type="button"
                     disabled={srUpdatingId === srDetailRow?._id || srDetailRow?.status === s}
-                    onClick={() => handleSrStatusUpdate(srDetailRow._id, s)}
+                    onClick={() => guardPermission("systemSupport", "update", () => handleSrStatusUpdate(srDetailRow._id, s))}
                     className={`rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
                       srDetailRow?.status === s
                         ? "bg-blue-700 text-white border-blue-700"

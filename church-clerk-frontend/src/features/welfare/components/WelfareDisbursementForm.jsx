@@ -7,19 +7,21 @@ import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
 import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
 import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
 
 function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(WelfareContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("welfare", "update") : false), [can]);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("welfareDisbursementCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])];
 
   const [beneficiaryName, setBeneficiaryName] = useState("");
   const [memberQuery, setMemberQuery] = useState("");
@@ -147,10 +149,10 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.updateDisbursement?.(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.createDisbursement?.(payload);
       }
 
@@ -253,7 +255,7 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Category</label>
-                {canCreate || canEdit ? (
+                
                   <AddLookupValueButton
                     label="Add category"
                     kind="welfareDisbursementCategory"
@@ -262,7 +264,6 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
                       setCategory(value);
                     }}
                   />
-                ) : null}
               </div>
               <select
                 value={category}

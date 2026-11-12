@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getMySubscription } from "../../features/subscription/services/subscription.api.js";
 import ChurchContext from "../../features/church/church.store.js";
+import AuthContext from "../../features/auth/auth.store.jsx";
+import PermissionContext from "../../features/permissions/permission.store.js";
 
 const SubscriptionLockContext = createContext(null);
 
@@ -111,9 +113,14 @@ export function SubscriptionLockProvider({ children }) {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState(null);
+  const [modalTitle, setModalTitle] = useState(null);
   const [modalPayVisible, setModalPayVisible] = useState(true);
   const fetchedRef = useRef(false);
   const churchCtx = useContext(ChurchContext);
+  const authCtx = useContext(AuthContext);
+  // A deactivated account is read-only on the backend (403 on writes) —
+  // surface it through the same lock state so buttons behave consistently.
+  const accountDeactivated = authCtx?.user?.isActive === false;
   // True when an HQ admin is monitoring a branch — branch data is read-only
   const branchViewOnly = Boolean(
     churchCtx?.isMonitoringBranch ||
@@ -156,6 +163,7 @@ export function SubscriptionLockProvider({ children }) {
   const showLockModal = useCallback(
     (customMessage, options) => {
       setModalMessage(customMessage || null);
+      setModalTitle(options?.title || null);
       setModalPayVisible(options?.payButton !== false);
       setModalOpen(true);
     },
@@ -165,6 +173,7 @@ export function SubscriptionLockProvider({ children }) {
   const closeLockModal = useCallback(() => {
     setModalOpen(false);
     setModalMessage(null);
+    setModalTitle(null);
     setModalPayVisible(true);
   }, []);
 
@@ -173,12 +182,31 @@ export function SubscriptionLockProvider({ children }) {
    * monitoring a branch (read-only), shows the modal instead of calling the
    * action. Returns nothing — call as a fire-and-forget.
    */
+  const permCtx = useContext(PermissionContext);
+  const permCan = permCtx?.can;
+
+  /**
+   * Wraps an action callback. Pass (moduleKey, permissionAction) to also
+   * check the user's permission matrix — a denied click shows the "no
+   * permission" modal immediately instead of letting them reach a form.
+   */
   const guardAction = useCallback(
-    (action) => {
+    (action, moduleKey, permissionAction) => {
+      if (moduleKey && typeof permCan === "function" && !permCan(moduleKey, permissionAction)) {
+        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+        return false;
+      }
+      if (accountDeactivated) {
+        showLockModal(
+          "This account has been deactivated. You can still view your data, but you cannot make changes.",
+          { payButton: false, title: "Account Deactivated" }
+        );
+        return false;
+      }
       if (branchViewOnly) {
         showLockModal(
           "You are viewing this branch from your headquarters account. Branch data is read-only — return to your headquarters context to make changes.",
-          { payButton: false }
+          { payButton: false, title: "Read-Only View" }
         );
         return false;
       }
@@ -189,21 +217,32 @@ export function SubscriptionLockProvider({ children }) {
       if (typeof action === "function") action();
       return true;
     },
-    [branchViewOnly, lockState.isLocked, showLockModal]
+    [permCan, accountDeactivated, branchViewOnly, lockState.isLocked, showLockModal]
+  );
+
+  // Convenience: pre-bind a permission check — guardPermission("members", "create", openForm)
+  const guardPermission = useCallback(
+    (moduleKey, permissionAction, action) => guardAction(action, moduleKey, permissionAction),
+    [guardAction]
   );
 
   const value = useMemo(
     () => ({
       ...lockState,
+      // Components that read isLocked (hiding/disabling write controls)
+      // should also react to a deactivated account.
+      isLocked: lockState.isLocked || accountDeactivated,
       modalOpen,
       modalMessage,
+      modalTitle,
       modalPayVisible,
       showLockModal,
       closeLockModal,
       guardAction,
+      guardPermission,
       refresh
     }),
-    [lockState, modalOpen, modalMessage, modalPayVisible, showLockModal, closeLockModal, guardAction, refresh]
+    [lockState, accountDeactivated, modalOpen, modalMessage, modalTitle, modalPayVisible, showLockModal, closeLockModal, guardAction, guardPermission, refresh]
   );
 
   return (
@@ -225,11 +264,16 @@ export function useSubscriptionLock() {
       lockMessage: "",
       modalOpen: false,
       modalMessage: null,
+      modalTitle: null,
       modalPayVisible: true,
       showLockModal: () => {},
       closeLockModal: () => {},
       guardAction: (action) => {
         if (typeof action === "function") action();
+        return true;
+      },
+      guardPermission: (moduleKey, permissionAction, fn) => {
+        if (typeof fn === "function") fn();
         return true;
       },
       refresh: async () => {}

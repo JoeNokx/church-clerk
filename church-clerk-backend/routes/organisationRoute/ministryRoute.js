@@ -32,7 +32,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllMinistries
 );
@@ -42,8 +42,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
-  requirePermission("organisation", "view"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
+  requirePermission("organisation", "read"),
   getSingleMinistry
 );
 router.post(
@@ -52,7 +52,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createMinistry
 );
@@ -62,7 +62,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMinistry
 );
@@ -72,7 +72,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deletionGuard("ministry"),
   deleteMinistry
@@ -85,7 +85,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   addMemberToMinistry
 );
@@ -95,7 +95,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   searchMembersToAddToMinistry
 );
@@ -105,7 +105,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getMinistryMembers
 );
@@ -115,7 +115,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMinistryMemberRole
 );
@@ -125,7 +125,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   removeMemberFromMinistry
 );
@@ -137,7 +137,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   addMinistryMeeting
 );
@@ -147,7 +147,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getMinistryMeetings
 );
@@ -157,7 +157,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMinistryMeeting
 );
@@ -167,7 +167,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deleteMinistryMeeting
 );
@@ -179,7 +179,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createMinistryIndividualAttendance
 );
@@ -189,7 +189,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllMinistryIndividualAttendances
 );
@@ -199,7 +199,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getSingleMinistryIndividualAttendance
 );
@@ -209,7 +209,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateMinistryIndividualAttendance
 );
@@ -219,7 +219,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deletionGuard("ministryIndividualAttendance", "attendanceId"),
   deleteMinistryIndividualAttendance
@@ -231,7 +231,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getMinistryCheckInLinkStatus
 );
@@ -241,7 +241,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   generateMinistryCheckInLink
 );
@@ -251,7 +251,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   revokeMinistryCheckInLink
 );
@@ -263,7 +263,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   backdatingGuard({ dateField: "date", module: "ministryOffering", entityType: "ministryOffering" }),
   createMinistryOffering
@@ -274,7 +274,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getAllMinistryOfferings
 );
@@ -284,7 +284,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   conditionalImmutableGuard(),
   updateMinistryOffering
@@ -297,7 +297,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   createOrgContribution
 );
@@ -307,7 +307,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getOrgContributions
 );
@@ -317,7 +317,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   updateOrgContribution
 );
@@ -327,7 +327,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   deleteOrgContribution
 );
@@ -339,7 +339,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "create"),
   uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
@@ -351,7 +351,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getScopedExpenses("ministry")
 );
@@ -361,7 +361,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "update"),
   uploadReceiptFile,
   conditionalImmutableGuard(),
@@ -373,7 +373,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   downloadScopedExpenseReceipt("ministry")
 );
@@ -383,7 +383,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "delete"),
   conditionalImmutableGuard(),
   deleteScopedExpense("ministry")
@@ -396,7 +396,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("organisation", "read"),
   getOrganisationKPI
 );

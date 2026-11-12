@@ -6,6 +6,7 @@ import {
   createSavedReport
 } from "../services/reportsAnalytics.api.js";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function saveBlob(res, fallbackName) {
   const contentType = res?.headers?.["content-type"] || "application/octet-stream";
@@ -545,6 +546,7 @@ function ReportPreviewModal({ preview, module, description, from, to, downloadin
 }
 
 function ReportGenerateModal({ open, module, canExport, onClose, onSaved }) {
+  const guarded = useGuardedAction();
   const [fields, setFields] = useState([]);
   const [checked, setChecked] = useState([]);
   const [fieldsLoading, setFieldsLoading] = useState(false);
@@ -699,6 +701,7 @@ function ReportGenerateModal({ open, module, canExport, onClose, onSaved }) {
   };
 
   const download = async (format) => {
+    if (!guarded(undefined, "reportsAnalytics", "export")) return;
     setDownloading(format);
     setError("");
     try {
@@ -912,26 +915,24 @@ function ReportGenerateModal({ open, module, canExport, onClose, onSaved }) {
             >
               {previewLoading ? "Loading…" : "Preview"}
             </button>
-            {canExport ? (
-              <>
-                <button
-                  type="button"
-                  disabled={actionDisabled || downloading === "pdf"}
-                  onClick={() => download("pdf")}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-                >
-                  {downloading === "pdf" ? "Downloading…" : "Download PDF"}
-                </button>
-                <button
-                  type="button"
-                  disabled={actionDisabled || downloading === "excel"}
-                  onClick={() => download("excel")}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-                >
-                  {downloading === "excel" ? "Downloading…" : "Download Excel"}
-                </button>
-              </>
-            ) : null}
+            <>
+              <button
+                type="button"
+                disabled={actionDisabled || downloading === "pdf"}
+                onClick={() => download("pdf")}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+              >
+                {downloading === "pdf" ? "Downloading…" : "Download PDF"}
+              </button>
+              <button
+                type="button"
+                disabled={actionDisabled || downloading === "excel"}
+                onClick={() => download("excel")}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+              >
+                {downloading === "excel" ? "Downloading…" : "Download Excel"}
+              </button>
+            </>
             <button
               type="button"
               disabled={actionDisabled || saving}
@@ -952,7 +953,7 @@ function ReportGenerateModal({ open, module, canExport, onClose, onSaved }) {
           from={from}
           to={to}
           downloading={downloading}
-          onDownload={canExport ? download : undefined}
+          onDownload={download}
           onClose={() => setPreview(null)}
         />
       ) : null}

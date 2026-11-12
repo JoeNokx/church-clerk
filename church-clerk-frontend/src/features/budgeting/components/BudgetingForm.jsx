@@ -3,6 +3,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import BudgetingContext from "../budgeting.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatYmdLocal(value) {
   if (!value) return "";
@@ -16,6 +17,7 @@ function formatYmdLocal(value) {
 
 function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(BudgetingContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("budgeting", "create") : false), [can]);
@@ -94,12 +96,14 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
       if (mode === "edit") {
         if (!canEdit) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.updateBudget?.(initialData?._id, payload);
       } else {
         if (!canCreate) {
           setIsSubmitting(false);
+          showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
           return;
         }
         await store?.createBudget?.(payload);

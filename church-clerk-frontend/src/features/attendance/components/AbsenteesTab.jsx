@@ -91,7 +91,7 @@ function AbsenteesTab({
   const [missedRow, setMissedRow] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
 
-  const canViewMember = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const canViewMember = useMemo(() => (typeof can === "function" ? can("members", "read") : false), [can]);
   const canCreateFollowUp = useMemo(() => (typeof can === "function" ? can("outreach", "create") : false), [can]);
 
   const viewMember = (m) => {
@@ -273,7 +273,7 @@ function AbsenteesTab({
                         <TableKebabMenu forceKebab items={[
                           { label: "View Services", onClick: () => setMissedRow(row) },
                           canViewMember && { label: "View Member", onClick: () => viewMember(m) },
-                          canCreateFollowUp && { label: "Schedule Follow-Up", onClick: () => guarded(() => setFuRow(row)) },
+                          { label: "Schedule Follow-Up", onClick: () => guarded(() => setFuRow(row), "outreach", "create") },
                         ].filter(Boolean)} />
                       </td>
                     </tr>

@@ -77,6 +77,13 @@ const churchSchema = new mongoose.Schema({
     default: null
   },
 
+  // Per-church financial governance rules — each church chooses its own
+  // preference. Both default ON; an absent sub-field reads as ON.
+  governance: {
+    enforceBackdating: { type: Boolean, default: true },
+    enforceImmutability: { type: Boolean, default: true }
+  },
+
   isActive: {
     type: Boolean,
     default: true,

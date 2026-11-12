@@ -13,6 +13,32 @@ const normalizeRoleKey = (role) => {
 // them onto the current "programs" module key.
 const LEGACY_MODULE_KEYS = { programs: ["events"] };
 
+// True when a role key belongs to the system side: the built-in
+// superadmin, or any active DB-backed role in the "system" scope (e.g. a
+// support role the super admin created). Used anywhere the codebase needs
+// to know "is this a system admin account" without hardcoding role names.
+export const isSystemRole = async (role) => {
+  const key = normalizeRoleKey(role);
+  if (!key) return false;
+  if (SYSTEM_ROLES.includes(key)) return true;
+  try {
+    const doc = await Role.findOne({ key, scope: "system", isActive: true })
+      .select("_id")
+      .lean();
+    return Boolean(doc?._id);
+  } catch {
+    return false;
+  }
+};
+
+// A "system viewer" is a system-scope account (no home church) looking at
+// church-scoped data. Replaces the old `role === "superadmin" ||
+// "supportadmin"` checks so ANY system role — including custom ones the
+// super admin creates — is recognised. Delegate sessions are excluded:
+// they intentionally behave like church users scoped to the delegated church.
+export const isSystemViewer = (req) =>
+  Boolean(req?.user) && !req.user?.church && !req?.isDelegate;
+
 const resolveFromPermissionObject = (permissionObject) => {
   if (!permissionObject || typeof permissionObject !== "object") return {};
 
@@ -40,10 +66,12 @@ const resolveFromPermissionObject = (permissionObject) => {
       .map((k) => permissionObject[k] ?? permissionObject[moduleKeyLookup[normalizeModuleKey(k)]])
       .find((v) => v !== undefined);
     for (const action of MODULES[moduleName]) {
+      // Stored "view" grants count as "read" — the two were merged.
+      const legacyView = action === "read";
       if (Array.isArray(allowed)) {
-        resolved[moduleName][action] = allowed.includes(action);
+        resolved[moduleName][action] = allowed.includes(action) || (legacyView && allowed.includes("view"));
       } else if (allowed && typeof allowed === "object") {
-        resolved[moduleName][action] = Boolean(allowed[action]);
+        resolved[moduleName][action] = Boolean(allowed[action]) || (legacyView && Boolean(allowed["view"]));
       } else {
         resolved[moduleName][action] = false;
       }
@@ -79,10 +107,13 @@ const expandLegacyPermissions = (resolved) => {
     if (MODULES.settingsChurchProfile) {
       if (s.read) out.settingsChurchProfile.read = true;
       if (s.update) out.settingsChurchProfile.update = true;
+      if (s.delete) out.settingsChurchProfile.delete = true;
     }
     if (MODULES.settingsUsersRoles) {
       if (s.read) out.settingsUsersRoles.read = true;
       if (s.create) out.settingsUsersRoles.create = true;
+      if (s.update) out.settingsUsersRoles.update = true;
+      if (s.delete) out.settingsUsersRoles.deactivate = true;
     }
     if (MODULES.settingsAuditLog) {
       if (s.read) out.settingsAuditLog.read = true;
@@ -138,7 +169,7 @@ const deepMergePermissions = (configDefaults, dbPermissions) => {
   return result;
 };
 
-export const resolvePermissions = async (role, roleRef = null, scope = "") => {
+export const resolvePermissions = async (role, roleRef = null, scope = "", churchId = null) => {
   const effectiveRole = normalizeRoleKey(role);
   if (!effectiveRole) return {};
 
@@ -154,20 +185,33 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
 
   try {
     if (roleRef) {
-      const dbRole = await Role.findOne({ _id: roleRef, ...(effectiveScope ? { scope: effectiveScope } : {}) }).select("permissions isActive").lean();
-      if (dbRole?._id && dbRole?.isActive === false) return {};
-      if (dbRole?.permissions && typeof dbRole.permissions === "object") {
+      const dbRole = await Role.findOne({ _id: roleRef, ...(effectiveScope ? { scope: effectiveScope } : {}) }).select("permissions isActive church").lean();
+      // A role owned by a different church grants nothing in this church.
+      if (dbRole?.church && churchId && String(dbRole.church) !== String(churchId)) return {};
+      // A stale roleRef must not lock a built-in role out of its config
+      // defaults — only non-built-in roles die with their doc.
+      if (dbRole?._id && dbRole?.isActive === false && !roleDefaults) return {};
+      if (dbRole?.permissions && dbRole?.isActive !== false && typeof dbRole.permissions === "object") {
         const merged = deepMergePermissions(roleDefaults, dbRole.permissions);
         const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
     } else if (scope) {
-      const dbRole = await Role.findOne({ key: effectiveRole, scope: String(scope) })
-        .select("permissions isActive")
-        .lean();
+      // Church-owned custom roles shadow global ones with the same key.
+      let dbRole = null;
+      if (churchId) {
+        dbRole = await Role.findOne({ key: effectiveRole, scope: String(scope), church: churchId })
+          .select("permissions isActive")
+          .lean();
+      }
+      if (!dbRole?._id) {
+        dbRole = await Role.findOne({ key: effectiveRole, scope: String(scope), church: null })
+          .select("permissions isActive")
+          .lean();
+      }
 
-      if (dbRole?._id && dbRole?.isActive === false) return {};
-      if (dbRole?.permissions && typeof dbRole.permissions === "object") {
+      if (dbRole?._id && dbRole?.isActive === false && !roleDefaults) return {};
+      if (dbRole?.permissions && dbRole?.isActive !== false && typeof dbRole.permissions === "object") {
         const merged = deepMergePermissions(roleDefaults, dbRole.permissions);
         const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);

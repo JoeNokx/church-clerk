@@ -30,7 +30,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "read"),
   getReportsAnalyticsKpi
 );
@@ -41,7 +41,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "read"),
   getReportsAnalytics
 );
@@ -52,7 +52,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "export"),
   exportReportsAnalytics
 );
@@ -63,7 +63,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "generate"),
   getReportsAnalyticsReport
 );
@@ -74,7 +74,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "generate"),
   getReportEntities
 );
@@ -85,7 +85,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "export"),
   exportReportsAnalyticsReport
 );
@@ -96,7 +96,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "generate"),
   createSavedReport
 );
@@ -107,7 +107,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "read"),
   getSavedReports
 );
@@ -118,7 +118,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "read"),
   getSavedReport
 );
@@ -129,7 +129,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "generate"),
   deleteSavedReport
 );
@@ -140,7 +140,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("reportsAnalytics", "export"),
   downloadSavedReport
 );

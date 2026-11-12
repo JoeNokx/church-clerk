@@ -169,8 +169,8 @@ function VisitTable({ onEdit }) {
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.nextFollowUpDate) || <span className="text-gray-300 text-xs">—</span>}</td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
-                      canEdit && { label: "Edit", onClick: () => guarded(() => onEdit?.(row)) },
-                      canDelete && { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row)) },
+                      { label: "Edit", onClick: () => guarded(() => onEdit?.(row), "memberCare", "update") },
+                      { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row), "memberCare", "delete") },
                     ]} />
                   </td>
                 </tr>

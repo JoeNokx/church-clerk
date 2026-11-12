@@ -12,6 +12,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
+import { useAuth } from "../../Auth/useAuth.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -81,6 +82,7 @@ const normalizePlanValue = (value) => {
 };
 
 function BillingPlansPage() {
+  const { guardPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [plans, setPlans] = useState([]);
@@ -366,7 +368,7 @@ function BillingPlansPage() {
       <Card.Header
         title="Plans"
         actions={
-          <Button variant="primary" size="sm" onClick={openCreate}>
+          <Button variant="primary" size="sm" onClick={() => guardPermission("systemBilling", "create", openCreate)}>
             New Plan
           </Button>
         }
@@ -475,7 +477,7 @@ function BillingPlansPage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => openEdit(p)}
+                        onClick={() => guardPermission("systemBilling", "update", () => openEdit(p))}
                         className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
                         title="Edit plan"
                       >
@@ -483,7 +485,7 @@ function BillingPlansPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setDeletePlan(p)}
+                        onClick={() => guardPermission("systemBilling", "delete", () => setDeletePlan(p))}
                         className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
                         title="Delete plan"
                       >
@@ -801,7 +803,7 @@ function BillingPlansPage() {
                   </Button>
                   <Button
                     variant="primary"
-                    onClick={onSave}
+                    onClick={() => guardPermission("systemBilling", editingId ? "update" : "create", onSave)}
                     loading={loading}
                     loadingText="Saving..."
                   >

@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
 import User from "../models/userModel.js";
+import Role from "../models/roleModel.js";
 import generateToken from "../utils/generateToken.js";
 import { SYSTEM_ROLES } from "../config/roles.js";
+import { isSystemRole } from "../utils/resolvePermissions.js";
 import { sendEmail } from "../services/emailService.js";
 import { getAdminPasswordResetEmailTemplate } from "../utils/emailTemplates.js";
 
@@ -17,9 +19,14 @@ const registerSystemAdmin = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (!SYSTEM_ROLES.includes(String(role))) {
+    // Accept the built-in superadmin or any active DB-backed system role
+    // (e.g. a support role created through Users & Roles).
+    const roleKey = String(role).trim().toLowerCase();
+    const dbRole = await Role.findOne({ key: roleKey, scope: "system" }).select("_id isActive").lean();
+    if (!SYSTEM_ROLES.includes(roleKey) && (!dbRole?._id || dbRole?.isActive === false)) {
       return res.status(400).json({ message: "Invalid role selected" });
     }
+    const roleRef = dbRole?._id || null;
 
     const emailExisting = await User.findOne({ email: String(email).toLowerCase().trim() }).lean();
     if (emailExisting) {
@@ -36,7 +43,8 @@ const registerSystemAdmin = async (req, res) => {
       email: String(email).toLowerCase().trim(),
       phoneNumber: String(phoneNumber).trim(),
       password,
-      role: String(role),
+      role: roleKey,
+      roleRef,
       church: null,
       isActive: true
     });
@@ -61,7 +69,7 @@ const getSystemAdminMe = async (req, res) => {
     }
     return res.status(200).json({
       status: "success",
-      data: { user }
+      data: { user, permissions: req.permissions || {} }
     });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
@@ -78,8 +86,14 @@ const loginSystemAdmin = async (req, res) => {
 
     const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select("+password");
 
-    if (!user || !SYSTEM_ROLES.includes(String(user.role))) {
+    // A system account has no home church — the church check also guards
+    // against stale data where a church user carries a system role string.
+    if (!user || user.church || !(await isSystemRole(user.role))) {
       return res.status(401).json({ message: "Email or password incorrect" });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({ message: "This account has been deactivated. Contact the super admin." });
     }
 
     const isMatch = await user.comparePassword(password);
@@ -179,7 +193,7 @@ const forgotAdminPassword = async (req, res) => {
     const genericMsg = "If an admin account exists for that email, a reset link has been sent.";
 
     const user = await User.findOne({ email });
-    if (!user || !SYSTEM_ROLES.includes(String(user.role))) {
+    if (!user || !(await isSystemRole(user.role))) {
       return res.status(200).json({ status: "success", message: genericMsg });
     }
 
@@ -221,7 +235,7 @@ const resetAdminPassword = async (req, res) => {
       passwordResetExpires: { $gt: new Date() }
     }).select("+password");
 
-    if (!user || !SYSTEM_ROLES.includes(String(user.role))) {
+    if (!user || !(await isSystemRole(user.role))) {
       return res.status(400).json({ message: "Invalid or expired reset link." });
     }
 

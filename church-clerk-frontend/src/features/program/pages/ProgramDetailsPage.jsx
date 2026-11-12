@@ -593,7 +593,7 @@ function ProgramDetailsPage() {
   const onSaveEditAttendee = async () => {
     if (!programId) return;
     if (!editAttendeeRow?._id) return;
-    if (!canEdit) return;
+    if (!canEdit) { guarded(undefined, "programs", "update"); return; }
 
     if (!String(editAttendeeFullName || "").trim() || !String(editAttendeePhone || "").trim()) {
       setEditAttendeeError("Name and phone number are required.");
@@ -628,7 +628,7 @@ function ProgramDetailsPage() {
   const onDeleteAttendee = async (row) => {
     if (!programId) return;
     if (!row?._id) return;
-    if (!canDelete) return;
+    if (!canDelete) { guarded(undefined, "programs", "delete"); return; }
     const ok = window.confirm(`Delete attendee "${row?.fullName || ""}"?`);
     if (!ok) return;
     setAttendeesLoading(true);
@@ -663,7 +663,7 @@ function ProgramDetailsPage() {
   const onSaveEditFile = async () => {
     if (!programId) return;
     if (!editFileRow?._id) return;
-    if (!canDelete) return;
+    if (!canDelete) { guarded(undefined, "programs", "delete"); return; }
 
     const nextName = String(editFileName || "").trim();
     if (!nextName) {
@@ -1138,15 +1138,13 @@ function ProgramDetailsPage() {
               </div>
             </div>
 
-            {canEdit ? (
-              <button
+            {(<button
                 type="button"
-                onClick={() => guarded(() => setEditOpen(true))}
+                onClick={() => guarded(() => setEditOpen(true), "programs", "update")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-100 text-sm"
               >
                 Edit
-              </button>
-            ) : null}
+              </button>)}
           </div>
         )}
 
@@ -1302,31 +1300,29 @@ function ProgramDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">Attendance Log</div>
                       <div className="text-gray-500 text-xs mt-0.5">Attendance log for this program.</div>
                     </div>
-                    {canEdit ? (
-                    <div className="flex items-center gap-2">
+                    {(<div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openChkLink())}
+                        onClick={() => guarded(() => void openChkLink(), "programs", "update")}
                         className="md:hidden inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                       >
                         Link
                       </button>
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openChkQr())}
+                        onClick={() => guarded(() => void openChkQr(), "programs", "update")}
                         className="md:hidden inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                       >
                         QR
                       </button>
                       <button
                         type="button"
-                        onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
+                        onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); }, "programs", "update")}
                         className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                       >
                         Record
                       </button>
-                    </div>
-                    ) : null}
+                    </div>)}
                   </div>
                   <FilterBar
                     searchValue={regSearch}
@@ -1338,10 +1334,9 @@ function ProgramDetailsPage() {
                     dateTo={regDateTo}
                     onDateApply={(from, to) => { setRegDateFrom(from); setRegDateTo(to); }}
                   >
-                    {canEdit ? (
-                    <button
+                    {(<button
                       type="button"
-                      onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
+                      onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); }, "programs", "update")}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1349,8 +1344,7 @@ function ProgramDetailsPage() {
                         <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                       Record
-                    </button>
-                    ) : null}
+                    </button>)}
                     <button
                       type="button"
                       onClick={() => guarded(() => void openChkLink())}
@@ -1481,9 +1475,9 @@ function ProgramDetailsPage() {
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(r?.registrationDate || r?.createdAt)}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
-                                r?.attendeeType === "guest" && canEdit && { label: "Schedule Follow-up", onClick: () => guarded(() => void openGuestFollowUp(r)) },
-                                canEdit && { label: "Edit", onClick: () => guarded(() => openEditAttendee(r)) },
-                                canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteAttendee(r)), danger: true }
+                                r?.attendeeType === "guest" && { label: "Schedule Follow-up", onClick: () => guarded(() => void openGuestFollowUp(r), "programs", "update") },
+                                { label: "Edit", onClick: () => guarded(() => openEditAttendee(r), "programs", "update") },
+                                { label: "Delete", onClick: () => guarded(() => onDeleteAttendee(r), "programs", "delete"), danger: true }
                               ]} />
                             </td>
                           </tr>
@@ -1512,24 +1506,22 @@ function ProgramDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">Pre-Registration</div>
                       <div className="text-gray-500 text-xs mt-0.5">People who registered before coming. Mark them present when they arrive.</div>
                     </div>
-                    {canEdit ? (
-                    <div className="flex items-center gap-2 md:hidden">
+                    {(<div className="flex items-center gap-2 md:hidden">
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openAdvLink())}
+                        onClick={() => guarded(() => void openAdvLink(), "programs", "update")}
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                       >
                         Link
                       </button>
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openAdvQr())}
+                        onClick={() => guarded(() => void openAdvQr(), "programs", "update")}
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                       >
                         QR
                       </button>
-                    </div>
-                    ) : null}
+                    </div>)}
                   </div>
                   <div className="hidden md:flex items-center gap-2">
                     <input
@@ -1538,24 +1530,22 @@ function ProgramDetailsPage() {
                       placeholder="Search by name, phone, or email"
                       className="h-10 w-full md:w-[160px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                     />
-                    {canEdit ? (
-                    <>
+                    {(<>
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openAdvLink())}
+                        onClick={() => guarded(() => void openAdvLink(), "programs", "update")}
                         className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
                       >
                         Link
                       </button>
                       <button
                         type="button"
-                        onClick={() => guarded(() => void openAdvQr())}
+                        onClick={() => guarded(() => void openAdvQr(), "programs", "update")}
                         className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
                       >
                         QR Code
                       </button>
-                    </>
-                    ) : null}
+                    </>)}
                     <FilterBar
                       selects={[]}
                       dateFrom={advDateFrom}
@@ -1625,10 +1615,10 @@ function ProgramDetailsPage() {
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{formatDate(r?.registrationDate || r?.createdAt)}</td>
                             <td className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">
                               <div className="inline-flex items-center gap-2 justify-end">
-                                {r?.attendeeType === "guest" && canEdit ? (
+                                {r?.attendeeType === "guest" ? (
                                   <button
                                     type="button"
-                                    onClick={() => guarded(() => void openGuestFollowUp(r))}
+                                    onClick={() => guarded(() => void openGuestFollowUp(r), "programs", "update")}
                                     disabled={followUpLoadingId === r?._id}
                                     className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
                                   >
@@ -1637,16 +1627,14 @@ function ProgramDetailsPage() {
                                 ) : null}
                                 {r?.present ? (
                                   <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 font-semibold text-emerald-700 text-xs">Present</span>
-                                ) : canEdit ? (
+                                ) : (
                                   <button
                                     type="button"
-                                    onClick={() => guarded(() => setMarkPresentRow(r))}
+                                    onClick={() => guarded(() => setMarkPresentRow(r), "programs", "update")}
                                     className="rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
                                   >
                                     Mark Present
                                   </button>
-                                ) : (
-                                  <span className="text-gray-400 text-xs">Not present</span>
                                 )}
                               </div>
                             </td>
@@ -1676,17 +1664,15 @@ function ProgramDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">File Upload</div>
                       <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
                     </div>
-                    {canEdit ? (
-                    <FileUploadButton
+                    {(<FileUploadButton
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
-                      onFile={onUploadFile}
-                      onClickIntercept={(open) => guarded(open)}
+                      onFile={() => guarded(onUploadFile, "programs", "update")}
+                      onClickIntercept={(open) => guarded(open, "programs", "update")}
                       className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
                     >
                       {fileUploading ? "Uploading..." : "Upload File"}
-                    </FileUploadButton>
-                    ) : null}
+                    </FileUploadButton>)}
                   </div>
                   <FilterBar
                     searchValue={filesSearch}
@@ -1698,12 +1684,11 @@ function ProgramDetailsPage() {
                     dateTo={filesDateTo}
                     onDateApply={(from, to) => { setFilesDateFrom(from); setFilesDateTo(to); }}
                   >
-                    {canEdit ? (
-                    <FileUploadButton
+                    {(<FileUploadButton
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
-                      onFile={onUploadFile}
-                      onClickIntercept={(open) => guarded(open)}
+                      onFile={() => guarded(onUploadFile, "programs", "update")}
+                      onClickIntercept={(open) => guarded(open, "programs", "update")}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1712,8 +1697,7 @@ function ProgramDetailsPage() {
                         <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                       {fileUploading ? "Uploading..." : "Upload File"}
-                    </FileUploadButton>
-                    ) : null}
+                    </FileUploadButton>)}
                   </FilterBar>
                   <MobileFilterBar
                     searchValue={filesSearch}
@@ -1793,15 +1777,13 @@ function ProgramDetailsPage() {
                               >
                                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" /></svg>
                               </button>
-                              {canEdit ? (
-                                <button
+                              {(<button
                                   type="button"
-                                  onClick={() => guarded(() => openEditFile(f))}
+                                  onClick={() => guarded(() => openEditFile(f), "programs", "update")}
                                   className="rounded-lg bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
                                 >
                                   Edit
-                                </button>
-                              ) : null}
+                                </button>)}
                               <button
                                 type="button"
                                 title="Download"

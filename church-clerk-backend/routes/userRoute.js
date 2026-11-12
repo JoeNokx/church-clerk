@@ -20,8 +20,15 @@ import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js"
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 import { blockUserCreationIfOverLimit } from "../middleware/blockUserCreationMiddleware.js";
+import {
+  listChurchCustomRoles,
+  createChurchRole,
+  getChurchRoleById,
+  updateChurchRole,
+  deleteChurchRole
+} from "../controller/roleController.js";
 
-// router.use(authorizeRoles("superadmin", "churchadmin", "financialofficer"));
+// router.use(authorizeRoles("superadmin", "churchclerkadmin"));
 // router.use(setActiveChurch);
 // router.use(readOnlyBranchGuard);
 // router.use(attachBillingBanner);
@@ -75,7 +82,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   blockUserCreationIfOverLimit,
   requirePermission("settingsUsersRoles", "create"),
   createChurchUser
@@ -87,8 +94,8 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("settingsUsersRoles", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("settingsUsersRoles", "update"),
   updateChurchUser
 );
 
@@ -98,7 +105,7 @@ router.patch(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsUsersRoles", "deactivate"),
   setChurchUserActiveStatus
 );
@@ -109,9 +116,57 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("settingsUsersRoles", "create"),
   canCreateChurchUser
+);
+
+// Church custom roles — writes are gated by the granular
+// settingsUsersRoles permission actions so custom roles can be delegated.
+router.get(
+  "/custom-roles",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settingsUsersRoles", "read"),
+  listChurchCustomRoles
+);
+router.get(
+  "/custom-roles/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settingsUsersRoles", "read"),
+  getChurchRoleById
+);
+router.post(
+  "/custom-roles",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settingsUsersRoles", "create"),
+  createChurchRole
+);
+router.patch(
+  "/custom-roles/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settingsUsersRoles", "update"),
+  updateChurchRole
+);
+router.delete(
+  "/custom-roles/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settingsUsersRoles", "deactivate"),
+  deleteChurchRole
 );
 
 

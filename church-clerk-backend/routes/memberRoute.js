@@ -47,7 +47,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "read"),
   validateRequest(getMembersQuerySchema, "query"),
   getAllMembers
@@ -59,7 +59,7 @@ router.get(
    setActiveChurch,
    readOnlyBranchGuard,
    attachPermissions,
-   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+   authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
    requirePermission("members", "create"),
    canCreateMember
  );
@@ -69,7 +69,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "read"),
   listLinkableUsers
 );
@@ -79,8 +79,8 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("members", "view"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
+  requirePermission("members", "read"),
   getSingleMember
 ); 
 router.post(
@@ -90,7 +90,7 @@ router.post(
   readOnlyBranchGuard,
   attachPermissions,
   blockMemberCreationIfOverdue,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   (req, res, next) => {
     if (req.body?.visitorId) {
       return requirePermission("visitors", "convert")(req, res, next);
@@ -107,7 +107,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "import"),
   downloadMembersImportTemplate
 );
@@ -118,7 +118,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "import"),
   uploadMemberFile,
   previewMembersImport
@@ -131,7 +131,7 @@ router.post(
   readOnlyBranchGuard,
   attachPermissions,
   blockMemberCreationIfOverdue,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "import"),
   uploadMemberFile,
   importMembersFromFile
@@ -142,7 +142,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "update"),
   (req, res, next) => {
     uploadMemoryFile.single("photo")(req, res, (err) => {
@@ -159,7 +159,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "update"),
   validateRequest(updateMemberSchema),
   updateMember
@@ -170,7 +170,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchclerkadmin"),
   requirePermission("members", "delete"),
   deletionGuard("member"),
   deleteMember
@@ -181,7 +181,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  authorizeRoles("superadmin", "churchclerkadmin"),
   requirePermission("members", "read"),
   getAllMembersKPI
 );

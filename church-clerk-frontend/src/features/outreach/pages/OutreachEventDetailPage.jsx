@@ -82,6 +82,7 @@ function Avatar({ name, photo, size = "sm" }) {
 
 // ─── Prospect Row ─────────────────────────────────────────────────
 function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWrite, canDelete }) {
+  const guarded = useGuardedAction();
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${prospect.firstName} ${prospect.lastName || ""}`.trim()}>
@@ -106,9 +107,9 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWri
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(prospect) },
-          canWrite && { label: "Schedule Follow-Up", onClick: () => onAddFollowUp(prospect) },
-          canWrite && { label: "Edit", onClick: () => onEdit(prospect) },
-          canDelete && prospect?.canDelete !== false && { label: "Delete", onClick: () => onDelete(prospect), danger: true },
+          { label: "Schedule Follow-Up", onClick: () => guarded(() => onAddFollowUp(prospect), "outreach", "update") },
+          { label: "Edit", onClick: () => guarded(() => onEdit(prospect), "outreach", "update") },
+          prospect?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(prospect), "outreach", "delete"), danger: true },
         ]} />
       </td>
     </tr>
@@ -132,6 +133,7 @@ const STATUS_OUTCOME_STYLES = {
 
 // ─── Follow-up Row ────────────────────────────────────────────────
 function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }) {
+  const guarded = useGuardedAction();
   const statusKey = followUp.status || followUp.outcome || "";
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
   return (
@@ -165,8 +167,8 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(followUp) },
-          canWrite && { label: "Edit", onClick: () => onEdit(followUp) },
-          canDelete && followUp.canDelete !== false && { label: "Delete", onClick: () => onDelete(followUp), danger: true },
+          { label: "Edit", onClick: () => guarded(() => onEdit(followUp), "outreach", "update") },
+          followUp.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(followUp), "outreach", "delete"), danger: true },
         ]} />
       </td>
     </tr>
@@ -202,7 +204,6 @@ export default function OutreachEventDetailPage() {
   const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
-  const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
 
   const { toPage } = useDashboardNavigator();
@@ -423,13 +424,13 @@ export default function OutreachEventDetailPage() {
           </div>
 
           {/* Quick status actions */}
-          {canWrite && event.status !== "completed" && event.status !== "cancelled" ? (
+          {event.status !== "cancelled" ? (
             <div className="flex flex-wrap gap-2 shrink-0">
               {event.status === "planned" ? (
-                <button onClick={() => guarded(() => handleStatusChange("ongoing"))} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-amber-600 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">Mark Ongoing</button>
+                <button onClick={() => guarded(() => handleStatusChange("ongoing"), "outreach", "update")} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-amber-600 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">Mark Ongoing</button>
               ) : null}
               {event.status !== "completed" ? (
-                <button onClick={() => guarded(() => handleStatusChange("completed"))} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-green-700 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60">Mark Complete</button>
+                <button onClick={() => guarded(() => handleStatusChange("completed"), "outreach", "update")} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-green-700 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60">Mark Complete</button>
               ) : null}
             </div>
           ) : null}
@@ -532,11 +533,9 @@ export default function OutreachEventDetailPage() {
                 dateTo={prospectDateTo}
                 onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); setProspectsPage(1); }}
               />
-              {canCreate ? (
-                <button onClick={() => guarded(() => setProspectForm({ open: true, mode: "create", data: null }))} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+              {(<button onClick={() => guarded(() => setProspectForm({ open: true, mode: "create", data: null }), "outreach", "create")} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
                   <span className="text-base leading-none">+</span> Record Person
-                </button>
-              ) : null}
+                </button>)}
             </div>
 
             {prospectsLoading ? (
@@ -548,8 +547,8 @@ export default function OutreachEventDetailPage() {
                   illustration={prospectSearch || prospectDateFrom || prospectDateTo ? "search" : "peopleReached"}
                   title={prospectSearch || prospectDateFrom || prospectDateTo ? "No people found" : "No people recorded yet"}
                   description={prospectSearch || prospectDateFrom || prospectDateTo ? "We couldn't find anyone matching your filters." : "Record the first person reached during this outreach."}
-                  actionLabel={prospectSearch || prospectDateFrom || prospectDateTo ? "Clear Filters" : (canCreate ? "Record Person" : null)}
-                  onAction={prospectSearch || prospectDateFrom || prospectDateTo ? () => { setProspectSearch(""); setProspectDateFrom(""); setProspectDateTo(""); } : (canCreate ? () => guarded(() => setProspectForm({ open: true, mode: "create", data: null })) : undefined)}
+                  actionLabel={prospectSearch || prospectDateFrom || prospectDateTo ? "Clear Filters" : "Record Person"}
+                  onAction={prospectSearch || prospectDateFrom || prospectDateTo ? () => { setProspectSearch(""); setProspectDateFrom(""); setProspectDateTo(""); } : () => guarded(() => setProspectForm({ open: true, mode: "create", data: null }), "outreach", "create")}
                 />
               </div>
             ) : (

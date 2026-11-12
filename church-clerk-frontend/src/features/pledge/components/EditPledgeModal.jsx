@@ -9,15 +9,15 @@ const SERVICE_TYPES = [
   "Sunday Service",
   "Sunday First Service",
   "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
   "Worship Service",
   "Bible Study",
   "Children Service",
   "Midweek Service",
   "Prayer Meeting",
-  "Special Program"
+  "Special Program",
+  "cells Meeting",
+  "groups Meeting",
+  "department Meeting"
 ];
 
 // Fields initialise from initialData via lazy useState, then re-sync whenever
@@ -48,7 +48,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
   }
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+  const serviceTypeOptions = [...new Set([...(lookupServiceTypes || []), ...SERVICE_TYPES])];
 
   const submit = async (e) => {
     e.preventDefault();

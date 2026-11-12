@@ -2,6 +2,7 @@ import User from "../../models/userModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import ReferralHistory from "../../models/referralModel/referralHistoryModel.js";
 import { generateReferralCode } from "../../utils/generateReferralCode.js";
+import { isSystemRole } from "../../utils/resolvePermissions.js";
 
 async function handleReferralCode({ churchId, referralCodeInput, email }) {
   if (!referralCodeInput) return;
@@ -33,10 +34,8 @@ async function assignUserRole({ userId, churchId, currentRole }) {
   const existingUsersInChurch = await User.countDocuments({ church: churchId });
 
   const setRole =
-    existingUsersInChurch === 0 &&
-    currentRole !== "superadmin" &&
-    currentRole !== "supportadmin"
-      ? "churchadmin"
+    existingUsersInChurch === 0 && !(await isSystemRole(currentRole))
+      ? "churchclerkadmin"
       : currentRole;
 
   const updatedUser = await User.findByIdAndUpdate(

@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
 
         type: String,
 
-        default: "churchadmin"
+        default: "churchclerkadmin"
 
     },
 

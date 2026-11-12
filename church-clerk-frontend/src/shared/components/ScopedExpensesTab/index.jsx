@@ -30,7 +30,6 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -94,7 +93,10 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
   const [description, setDescription] = useState("");
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
+  const categoryOptions = useMemo(
+    () => [...new Set([...(lookupCategories || []), ...CATEGORY_OPTIONS])],
+    [lookupCategories]
+  );
   const categorySelectOptions = useMemo(
     () => categoryOptions.map((c) => ({ label: c, value: c })),
     [categoryOptions]
@@ -223,7 +225,6 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <div className="font-semibold text-gray-900 text-sm">Expenses</div>
             <div className="text-gray-500 text-xs">Expense records for this {entityLabel}</div>
           </div>
-          {canEditChurch ? (
           <button
             type="button"
             onClick={() => guarded(openCreate)}
@@ -232,7 +233,6 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <span className="leading-none text-lg">+</span>
             Add Expense
           </button>
-          ) : null}
         </div>
 
         <FilterBar
@@ -253,7 +253,6 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
           dateTo={dateTo}
           onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
         >
-          {canEditChurch ? (
           <button
             type="button"
             onClick={() => guarded(openCreate)}
@@ -262,7 +261,6 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <span className="leading-none text-lg">+</span>
             Add Expense
           </button>
-          ) : null}
         </FilterBar>
         <MobileFilterBar
           searchValue={search}
@@ -343,7 +341,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                        canEditChurch && { label: "Edit", onClick: () => guarded(() => openEdit(row)) }
+                        { label: "Edit", onClick: () => guarded(() => openEdit(row)) }
                       ]} />
                     </td>
                   </tr>

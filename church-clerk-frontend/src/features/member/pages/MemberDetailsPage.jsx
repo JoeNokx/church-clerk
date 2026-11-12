@@ -202,10 +202,10 @@ function MemberDetailsPageInner() {
         </div>
 
         <div className="flex items-center gap-3">
-          {canEdit && memberId && (
+          {memberId && (
             <button
               type="button"
-              onClick={() => guarded(() => toPage("member-form", { id: memberId }))}
+              onClick={() => guarded(() => toPage("member-form", { id: memberId }), "members", "update")}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               Edit

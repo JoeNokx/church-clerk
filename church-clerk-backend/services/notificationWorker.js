@@ -12,11 +12,8 @@ import User from "../models/userModel.js";
 import ActivityLog from "../models/activityLogModel.js";
 
 const CHURCH_ROLES = [
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader"
+  "churchclerkadmin",
+  
 ];
 
 const normalizeRole = (role) => {

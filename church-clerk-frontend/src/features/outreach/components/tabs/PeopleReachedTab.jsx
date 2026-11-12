@@ -556,6 +556,7 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
 
 // ── Person Row ────────────────────────────────────────────────────
 function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canDelete }) {
+  const guarded = useGuardedAction();
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${person.firstName} ${person.lastName}`}>
@@ -578,8 +579,8 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(person) },
           { label: "Connect", onClick: () => onConvert(person) },
-          canWrite && { label: "Edit", onClick: () => onEdit(person) },
-          canDelete && person?.canDelete !== false && { label: "Delete", onClick: () => onDelete(person), danger: true },
+          { label: "Edit", onClick: () => guarded(() => onEdit(person), "outreach", "update") },
+          person?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(person), "outreach", "delete"), danger: true },
         ]} />
       </td>
     </tr>
@@ -589,7 +590,6 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
 // ── Main Tab ──────────────────────────────────────────────────────
 export default function PeopleReachedTab({ setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
-  const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
   const { toPage } = useDashboardNavigator();
@@ -627,15 +627,14 @@ export default function PeopleReachedTab({ setHeaderAction }) {
 
   useEffect(() => {
     if (!setHeaderAction) return;
-    if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         Record Person
       </button>
     );
     return () => setHeaderAction(null);
-  }, [canCreate, setHeaderAction]);
+  }, [setHeaderAction]);
 
   const handleFilter = (key, value) => {
     let next;
@@ -737,8 +736,8 @@ export default function PeopleReachedTab({ setHeaderAction }) {
                 description={hasFilters
                   ? "We couldn't find anyone matching your filters."
                   : "Record the first person reached during an outreach."}
-                actionLabel={hasFilters ? "Clear Filters" : (canWrite ? "Add Person" : null)}
-                onAction={hasFilters ? () => setFilters({ search: "", stage: "", dateFrom: "", dateTo: "" }) : (canWrite ? () => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }) : undefined)}
+                actionLabel={hasFilters ? "Clear Filters" : "Add Person"}
+                onAction={hasFilters ? () => setFilters({ search: "", stage: "", dateFrom: "", dateTo: "" }) : () => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }, "outreach", "update")}
               />
             );
           })()

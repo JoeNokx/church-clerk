@@ -553,7 +553,7 @@ function TithePageInner() {
             <div className="mt-4 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
               <ModeSelectCard
                 kind="individual"
-                disabled={!canUpdateMode || store?.loading}
+                disabled={store?.loading}
                 onSelect={() => guarded(async () => {
                   localStorage.setItem("tithe_default_mode", "individual");
                   await store?.setRecordingMode?.("individual");
@@ -562,7 +562,7 @@ function TithePageInner() {
               />
               <ModeSelectCard
                 kind="aggregate"
-                disabled={!canUpdateMode || store?.loading}
+                disabled={store?.loading}
                 onSelect={() => guarded(async () => {
                   localStorage.setItem("tithe_default_mode", "aggregate");
                   await store?.setRecordingMode?.("aggregate");
@@ -583,10 +583,10 @@ function TithePageInner() {
             </div>
 
             <div className="flex items-center gap-3">
-              {canCreate && mode === "individual" ? (
+              {mode === "individual" ? (
                 <button
                   type="button"
-                  onClick={() => guarded(() => openCreateIndividual())}
+                  onClick={() => guarded(() => openCreateIndividual(), "tithe", "create")}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
                   <span className="leading-none text-lg">+</span>
@@ -594,10 +594,10 @@ function TithePageInner() {
                 </button>
               ) : null}
 
-              {canCreate && mode === "aggregate" ? (
+              {mode === "aggregate" ? (
                 <button
                   type="button"
-                  onClick={() => guarded(() => openCreateAggregate())}
+                  onClick={() => guarded(() => openCreateAggregate(), "tithe", "create")}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
                   <span className="leading-none text-lg">+</span>

@@ -288,7 +288,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("businessIncomeCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : INCOME_CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...INCOME_CATEGORY_OPTIONS])];
 
   useEffect(() => {
     if (!open) return;
@@ -592,7 +592,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
   };
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("businessExpenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : EXPENSE_CATEGORY_OPTIONS;
+  const categoryOptions = [...new Set([...(lookupCategories || []), ...EXPENSE_CATEGORY_OPTIONS])];
 
   return (
     <BaseModal open={open} title={title} subtitle="Business expenses" onClose={onClose}>
@@ -776,7 +776,6 @@ function BusinessVentureDetailsPage() {
   const churchCtx = useContext(ChurchContext);
   const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const activeChurch = churchCtx?.activeChurch;
-  const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
   const businessId = useMemo(() => new URLSearchParams(location.search).get("id") || "", [location.search]);
   const tabParam = useMemo(() => new URLSearchParams(location.search).get("tab") || "", [location.search]);
@@ -809,8 +808,8 @@ function BusinessVentureDetailsPage() {
 
   const { values: incomeLookupCategories } = useLookupValues("businessIncomeCategory");
   const { values: expenseLookupCategories } = useLookupValues("businessExpenseCategory");
-  const incomeCategoryOptions = incomeLookupCategories?.length ? incomeLookupCategories : INCOME_CATEGORY_OPTIONS;
-  const expenseCategoryOptions = expenseLookupCategories?.length ? expenseLookupCategories : EXPENSE_CATEGORY_OPTIONS;
+  const incomeCategoryOptions = [...new Set([...(incomeLookupCategories || []), ...INCOME_CATEGORY_OPTIONS])];
+  const expenseCategoryOptions = [...new Set([...(expenseLookupCategories || []), ...EXPENSE_CATEGORY_OPTIONS])];
   const activeCategoryOptions = activeTab === "incomes" ? incomeCategoryOptions : expenseCategoryOptions;
   const categorySelectOptions = useMemo(
     () => activeCategoryOptions.map((c) => ({ label: c, value: c })),
@@ -1087,27 +1086,25 @@ function BusinessVentureDetailsPage() {
                   </>
                 )}
               </div>
-              {canEdit ? (
-                activeTab === "incomes" ? (
-                  <button
-                    type="button"
-                    onClick={() => guarded(() => setAddIncomeOpen(true))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => guarded(() => setAddExpenseOpen(true))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add
-                  </button>
-                )
-              ) : null}
+              {activeTab === "incomes" ? (
+                <button
+                  type="button"
+                  onClick={() => guarded(() => setAddIncomeOpen(true))}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => guarded(() => setAddExpenseOpen(true))}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add
+                </button>
+              )}
             </div>
 
             {/* Right: FilterBar + action button (desktop) */}
@@ -1153,27 +1150,25 @@ function BusinessVentureDetailsPage() {
                 }
               }}
             >
-              {canEdit ? (
-                activeTab === "incomes" ? (
-                  <button
-                    type="button"
-                    onClick={() => guarded(() => setAddIncomeOpen(true))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add Income
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => guarded(() => setAddExpenseOpen(true))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add Expense
-                  </button>
-                )
-              ) : null}
+              {activeTab === "incomes" ? (
+                <button
+                  type="button"
+                  onClick={() => guarded(() => setAddIncomeOpen(true))}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Income
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => guarded(() => setAddExpenseOpen(true))}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Expense
+                </button>
+              )}
             </FilterBar>
 
             {/* Mobile */}
@@ -1274,7 +1269,7 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewIncomeRow(row); setViewIncomeOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditIncomeRow(row); setEditIncomeOpen(true); }) }
+                              { label: "Edit", onClick: () => guarded(() => { setEditIncomeRow(row); setEditIncomeOpen(true); }, "businessVentures", "update") }
                             ]} />
                           </td>
                         </tr>
@@ -1334,7 +1329,7 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewExpenseRow(row); setViewExpenseOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditExpenseRow(row); setEditExpenseOpen(true); }) }
+                              { label: "Edit", onClick: () => guarded(() => { setEditExpenseRow(row); setEditExpenseOpen(true); }, "businessVentures", "update") }
                             ]} />
                           </td>
                         </tr>

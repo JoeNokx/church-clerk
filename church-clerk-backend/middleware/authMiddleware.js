@@ -5,6 +5,7 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 import Church from "../models/churchModel.js";
 import { FEATURE_ROUTE_MAP, isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
+import { isSystemRole } from "../utils/resolvePermissions.js";
 import { releaseExpiredTrialForChurch, applyPendingPlanChange } from "../controller/billingController/subscriptionService.js";
 
 
@@ -94,6 +95,10 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
     const normalizedRole = String(req.user?.role || "").trim().toLowerCase();
     const effectiveRole = normalizedRole === "super_admin" ? "superadmin" : normalizedRole === "support_admin" ? "supportadmin" : normalizedRole;
 
+    // System accounts have no home church — skip the DB lookup for the
+    // common church-user path.
+    const roleIsSystem = req.user?.church ? false : await isSystemRole(effectiveRole);
+
     let activeChurchId = headerChurchId || userChurchId;
 
     // Branch/Independent users should never switch context via header.
@@ -107,8 +112,7 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
 
     let userChurch = null;
     if (
-      effectiveRole !== "superadmin" &&
-      effectiveRole !== "supportadmin" &&
+      !roleIsSystem &&
       headerChurchId &&
       userChurchId &&
       headerChurchId.toString() !== userChurchId.toString()
@@ -133,8 +137,7 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
     }
 
     if (
-      effectiveRole !== "superadmin" &&
-      effectiveRole !== "supportadmin" &&
+      !roleIsSystem &&
       userChurchId &&
       activeChurchId.toString() !== userChurchId.toString()
     ) {
@@ -166,7 +169,7 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
         const now = new Date();
         const isTrialStatus =
           subscription.status === "free trial" || subscription.status === "trialing";
-        if (effectiveRole === "superadmin" || effectiveRole === "supportadmin") {
+        if (roleIsSystem) {
           return next();
         }
 

@@ -1,20 +1,15 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
-import ChurchContext from "../../church/church.store.js";
 
 function AddLookupValueButton({ label, kind, onCreated }) {
   const [open, setOpen] = useState(false);
   const guarded = useGuardedAction();
-  const churchCtx = useContext(ChurchContext);
-  const canEditChurch = churchCtx?.activeChurch?._id ? churchCtx?.activeChurch?.canEdit !== false : true;
-
-  if (!canEditChurch) return null;
 
   if (!open) {
     return (
       <button
         type="button"
-        onClick={() => guarded(() => setOpen(true))}
+        onClick={() => guarded(() => setOpen(true), "settingsChurchProfile", "update")}
         className="font-semibold text-blue-700 hover:underline text-xs"
       >
         {label}
@@ -61,13 +56,13 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
         window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind, value: v } }));
         // Fan out expense-category changes so the budget expense category list
         // stays in sync when a category is added in welfare, business, etc.
-        const EXPENSE_KINDS = ["welfareDisbursementCategory", "businessExpenseCategory", "expenseCategory"];
+        const EXPENSE_KINDS = ["welfareDisbursementCategory", "businessExpenseCategory", "generalExpenseCategory", "expenseCategory"];
         if (EXPENSE_KINDS.includes(kind) && kind !== "expenseCategory") {
           window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind: "expenseCategory", value: v } }));
         }
         // Fan out income-category changes so the budget income category list
         // stays in sync when a category is added in special funds, offerings, etc.
-        const INCOME_KINDS = ["specialFundCategory", "offeringType", "incomeCategory"];
+        const INCOME_KINDS = ["specialFundCategory", "offeringType", "seedType", "businessIncomeCategory", "incomeCategory"];
         if (INCOME_KINDS.includes(kind) && kind !== "incomeCategory") {
           window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind: "incomeCategory", value: v } }));
         }

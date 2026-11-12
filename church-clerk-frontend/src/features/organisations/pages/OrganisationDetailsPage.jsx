@@ -46,15 +46,15 @@ const FALLBACK_SERVICE_TYPES = [
   "Sunday Service",
   "Sunday First Service",
   "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
   "Special Program",
   "Worship Service",
   "Bible Study",
   "Children Service",
   "Midweek Service",
-  "Prayer Meeting"
+  "Prayer Meeting",
+  "cells Meeting",
+  "groups Meeting",
+  "department Meeting"
 ];
 
 import {
@@ -243,7 +243,7 @@ function OrganisationDetailsPage() {
 
   const churchStore = useContext(ChurchContext);
   const { can } = useContext(PermissionContext) || {};
-  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "read") : false), [can]);
   const canEdit = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
@@ -343,7 +343,7 @@ function OrganisationDetailsPage() {
   const [individualViewUnmarkedPage, setIndividualViewUnmarkedPage] = useState(1);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : FALLBACK_SERVICE_TYPES;
+  const serviceTypeOptions = [...new Set([...(lookupServiceTypes || []), ...FALLBACK_SERVICE_TYPES])];
 
   // contributions
   const [contributionLoading, setContributionLoading] = useState(false);
@@ -406,9 +406,9 @@ function OrganisationDetailsPage() {
   const [offeringDateTo, setOfferingDateTo] = useState("");
 
   const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
-  const offeringTypeOptions = lookupOfferingTypes?.length
-    ? lookupOfferingTypes
-    : ["first offering", "second offering", "third offering", "fourth offering", "fifth offering"];
+  const offeringTypeOptions = [
+    ...new Set([...(lookupOfferingTypes || []), "main offering", "first offering", "second offering"])
+  ];
 
   const title = type === "cell" ? "Cell" : type === "department" ? "Department" : type === "ministry" ? "Ministry" : "Group";
 
@@ -1284,8 +1284,7 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Members</div>
                 <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
               </div>
-              {canEdit ? (
-              <button
+              {(<button
                 type="button"
                 onClick={() => guarded(() => {
                   setAddMemberError("");
@@ -1299,8 +1298,7 @@ function OrganisationDetailsPage() {
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white shadow-sm hover:bg-blue-700 text-xs"
               >
                 + Add Member
-              </button>
-              ) : null}
+              </button>)}
             </div>
 
             <FilterBar
@@ -1320,8 +1318,7 @@ function OrganisationDetailsPage() {
                 dateTo={memberDateTo}
                 onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); setMemberPage(1); }}
               />
-              {canEdit ? (
-              <button
+              {(<button
                 type="button"
                 onClick={() => guarded(() => {
                   setAddMemberError("");
@@ -1336,8 +1333,7 @@ function OrganisationDetailsPage() {
               >
                 <span className="leading-none text-lg">+</span>
                 Add Member
-              </button>
-              ) : null}
+              </button>)}
             </FilterBar>
           </div>
 
@@ -1394,8 +1390,8 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
-                            canEdit && { label: "Edit Role", onClick: () => guarded(() => openRoleModal(member?._id, m?.role || "member")) },
-                            canEdit && { label: "Remove", onClick: () => guarded(() => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() })), danger: true }
+                            { label: "Edit Role", onClick: () => guarded(() => openRoleModal(member?._id, m?.role || "member")) },
+                            { label: "Remove", onClick: () => guarded(() => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() })), danger: true }
                           ]} />
                         </td>
                       </tr>
@@ -1672,16 +1668,14 @@ function OrganisationDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">Attendance Log</div>
                       <div className="text-gray-500 text-xs hidden md:block">Record and track member presence per meeting</div>
                     </div>
-                    {canEdit ? (
-                    <button
+                    {(<button
                       type="button"
                       onClick={() => guarded(() => void openIndividualAttendanceForm("create", null))}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700 text-xs"
                     >
                       <span className="leading-none text-base">+</span>
                       Record
-                    </button>
-                    ) : null}
+                    </button>)}
                   </div>
                   <div className="hidden md:flex items-center gap-2">
                     <input
@@ -1746,8 +1740,7 @@ function OrganisationDetailsPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
                               <div className="font-semibold text-gray-900 text-xs truncate">{formatDay(r?.date) || "-"}, {formatDate(r?.date)}</div>
-                              {canEdit ? (
-                              <div className="flex items-center gap-1 shrink-0">
+                              {(<div className="flex items-center gap-1 shrink-0">
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); guarded(() => void openIndividualAttendanceForm("edit", r)); }}
@@ -1766,8 +1759,7 @@ function OrganisationDetailsPage() {
                                     <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                   </button>
                                 ) : null}
-                              </div>
-                              ) : null}
+                              </div>)}
                             </div>
                             <div className="text-gray-500 text-[11px] truncate">{r?.serviceType || "Service"} · {r?.mainSpeaker || "No speaker"}</div>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -1843,8 +1835,7 @@ function OrganisationDetailsPage() {
                         <h3 className="font-semibold text-gray-900 text-sm">{formatDay(individualViewing?.date) || "-"}, {formatDate(individualViewing?.date)}</h3>
                         <div className="text-gray-500 text-xs mt-0.5">{individualViewing?.serviceType || "-"} · {individualViewing?.mainSpeaker || "No speaker"}</div>
                       </div>
-                      {canEdit ? (
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      {(<div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => guarded(() => { setIndividualLinkError(""); setIndividualLinkModalOpen(true); })}
@@ -1861,8 +1852,7 @@ function OrganisationDetailsPage() {
                           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                           Manual Marking
                         </button>
-                      </div>
-                      ) : null}
+                      </div>)}
                     </div>
                     {/* Counts summary - separate row for breathing room */}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -2220,12 +2210,10 @@ function OrganisationDetailsPage() {
                           <div className="text-gray-500 text-xs mt-0.5">{individualViewing?.serviceType || "-"}</div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {canEdit ? (
-                          <button type="button" onClick={saveIndividualMarking} disabled={individualMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                          {(<button type="button" onClick={() => guarded(saveIndividualMarking)} disabled={individualMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
                             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             {individualMarkingSaving ? "Saving..." : "Save Attendance"}
-                          </button>
-                          ) : null}
+                          </button>)}
                           <button type="button" onClick={() => { if (!individualMarkingSaving) setIndividualMarkingOpen(false); }} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                           </button>
@@ -2401,16 +2389,14 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Offerings & Seeds</div>
                 <div className="text-gray-500 text-xs">Record {title.toLowerCase()} offerings</div>
               </div>
-              {canEdit ? (
-              <button
+              {(<button
                 type="button"
                 onClick={() => guarded(() => openOfferingForm("create", null))}
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Offering
-              </button>
-              ) : null}
+              </button>)}
             </div>
 
             <div className="flex flex-col gap-2 items-end w-full md:w-auto">
@@ -2423,16 +2409,14 @@ function OrganisationDetailsPage() {
                 dateTo={offeringDateTo}
                 onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); setOfferingPage(1); }}
               >
-                {canEdit ? (
-                <button
+                {(<button
                   type="button"
                   onClick={() => guarded(() => openOfferingForm("create", null))}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
                 >
                   <span className="leading-none text-lg">+</span>
                   Add Offering
-                </button>
-                ) : null}
+                </button>)}
               </FilterBar>
               <MobileFilterBar
                 searchValue={offeringSearch}
@@ -2490,7 +2474,7 @@ function OrganisationDetailsPage() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
-                          canEdit && { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) }
+                          { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) }
                         ]} />
                       </td>
                     </tr>
@@ -2694,16 +2678,14 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Contributions</div>
                 <div className="text-gray-500 text-xs">Record member contributions for this {title.toLowerCase()}</div>
               </div>
-              {canEdit ? (
-              <button
+              {(<button
                 type="button"
                 onClick={() => guarded(() => openContributionForm("create", null))}
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Contribution
-              </button>
-              ) : null}
+              </button>)}
             </div>
 
             <div className="flex flex-col gap-2 items-end w-full md:w-auto">
@@ -2716,16 +2698,14 @@ function OrganisationDetailsPage() {
                 dateTo={contributionDateTo}
                 onDateApply={(from, to) => { setContributionDateFrom(from); setContributionDateTo(to); setContributionPage(1); }}
               >
-                {canEdit ? (
-                <button
+                {(<button
                   type="button"
                   onClick={() => guarded(() => openContributionForm("create", null))}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
                 >
                   <span className="leading-none text-lg">+</span>
                   Add Contribution
-                </button>
-                ) : null}
+                </button>)}
               </FilterBar>
               <MobileFilterBar
                 searchValue={contributionSearch}
@@ -2790,8 +2770,8 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => { setContributionViewRow(r); setContributionViewOpen(true); } },
-                            canEdit && { label: "Edit", onClick: () => guarded(() => openContributionForm("edit", r)) },
-                            canEdit && { label: "Delete", onClick: () => guarded(() => openConfirm("delete-contribution", r?._id)), danger: true }
+                            { label: "Edit", onClick: () => guarded(() => openContributionForm("edit", r)) },
+                            { label: "Delete", onClick: () => guarded(() => openConfirm("delete-contribution", r?._id)), danger: true }
                           ]} />
                         </td>
                       </tr>

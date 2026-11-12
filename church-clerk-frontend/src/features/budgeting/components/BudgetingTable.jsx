@@ -177,9 +177,9 @@ function BudgetingTable({ onEdit, onCreate }) {
       ? "Create your first budget to start planning your church finances."
       : "We couldn't find any budgets matching your current search or filters.";
 
-    const showAdd = isZero && canCreate && onCreate;
+    const showAdd = isZero && onCreate;
     const actionLabel = showAdd ? "Create Budget" : recovery?.actionLabel;
-    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate, "budgeting", "create") : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -207,7 +207,6 @@ function BudgetingTable({ onEdit, onCreate }) {
             // Empty budgets can be deleted straight from the card; the icon
             // disappears as soon as an item exists so real budgets can't be
             // wiped by accident.
-            const canDeleteCard = canDelete && itemCount === 0;
             const confirmingDelete = confirmDeleteId === row?._id;
 
             return (
@@ -225,10 +224,9 @@ function BudgetingTable({ onEdit, onCreate }) {
                   badgeClass={statusBadge(row?.status)}
                   actions={
                     <>
-                      {canEdit ? (
-                        <button
+                      {(<button
                           type="button"
-                          onClick={() => guarded(() => { if (row?._id) onEdit?.(row); })}
+                          onClick={() => guarded(() => { if (row?._id) onEdit?.(row); }, "budgeting", "update")}
                           className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
                           aria-label="Edit"
                         >
@@ -236,12 +234,11 @@ function BudgetingTable({ onEdit, onCreate }) {
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                           </svg>
-                        </button>
-                      ) : null}
-                      {canDeleteCard && !confirmingDelete ? (
+                        </button>)}
+                      {itemCount === 0 && !confirmingDelete ? (
                         <button
                           type="button"
-                          onClick={() => guarded(() => setConfirmDeleteId(row?._id))}
+                          onClick={() => guarded(() => setConfirmDeleteId(row?._id), "budgeting", "delete")}
                           className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                           aria-label="Delete budget"
                         >

@@ -6,6 +6,8 @@ import Plan from "../models/billingModel/planModel.js";
 
 import { isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
 
+import { isSystemRole } from "../utils/resolvePermissions.js";
+
 
 
 export const setActiveChurch = async (req, res, next) => {
@@ -18,17 +20,21 @@ export const setActiveChurch = async (req, res, next) => {
 
     const effectiveRole = normalizedRole === "super_admin" ? "superadmin" : normalizedRole === "support_admin" ? "supportadmin" : normalizedRole;
 
+    // System accounts have no home church — skip the DB lookup for the
+    // common church-user path.
+    const roleIsSystem = req.user?.church ? false : await isSystemRole(effectiveRole);
+
 
 
     // Delegated sessions: the system admin is viewing as a specific church.
-    // The role was overridden to "churchadmin" by attachPermissions, but the
+    // The role was overridden to "churchclerkadmin" by attachPermissions, but the
     // admin user has no home church. Treat delegated sessions like superadmin
     // for church scoping (trust the x-active-church header), but enforce that
     // the active church matches the one the delegate token was issued for.
     const isDelegate = Boolean(req.isDelegate);
     const delegateChurchId = req.delegateChurch || null;
 
-    if (!req.user?.church && effectiveRole !== "superadmin" && effectiveRole !== "supportadmin" && !isDelegate) {
+    if (!req.user?.church && !roleIsSystem && !isDelegate) {
 
       req.activeChurch = null;    // explicitly set for dashboard controllers
 
@@ -62,9 +68,7 @@ export const setActiveChurch = async (req, res, next) => {
 
     if (
 
-      effectiveRole !== "superadmin" &&
-
-      effectiveRole !== "supportadmin" &&
+      !roleIsSystem &&
 
       !isDelegate &&
 
@@ -116,9 +120,7 @@ export const setActiveChurch = async (req, res, next) => {
 
     if (
 
-      effectiveRole !== "superadmin" &&
-
-      effectiveRole !== "supportadmin" &&
+      !roleIsSystem &&
 
       !isDelegate &&
 
@@ -166,9 +168,7 @@ export const setActiveChurch = async (req, res, next) => {
 
     req.activeChurch.canEdit =
 
-      effectiveRole === "superadmin" ||
-
-      effectiveRole === "supportadmin" ||
+      roleIsSystem ||
 
       isDelegate ||
 

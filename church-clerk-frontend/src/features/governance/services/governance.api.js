@@ -14,3 +14,9 @@ export const rejectRequest = (id, reason) =>
 
 export const submitAdjustment = (resourceUrl, patch, reason, impactLevel = "MINOR") =>
   http.post(`${resourceUrl}/adjustments`, { patch, reason, impactLevel });
+
+export const getGovernanceFlags = () =>
+  http.get("/church-governance/flags");
+
+export const updateGovernanceFlags = (payload) =>
+  http.patch("/church-governance/flags", payload);

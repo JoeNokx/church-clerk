@@ -17,11 +17,8 @@ const router = express.Router();
 const allowedRoles = [
   "superadmin",
   "supportadmin",
-  "churchadmin",
-  "associateadmin",
-  "secretary",
-  "financialofficer",
-  "leader"
+  "churchclerkadmin",
+  
 ];
 
 router.get(

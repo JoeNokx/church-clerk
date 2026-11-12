@@ -190,7 +190,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-  const canSeeApprovals = user?.role === "superadmin" || user?.role === "churchadmin";
+  const canSeeApprovals = typeof can === "function" ? can("financeGovernance", "read") : false;
 
   const { data: pendingApprovalsCount = 0 } = useQuery({
     queryKey: ["church-governance", "PENDING_APPROVAL", "sidebar-count"],

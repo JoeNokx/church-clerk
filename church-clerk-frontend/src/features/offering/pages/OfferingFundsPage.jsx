@@ -1,7 +1,6 @@
 import { useContext, useMemo, useRef, useState } from "react";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
-import PermissionContext from "../../permissions/permission.store.js";
 import { OfferingProvider } from "../offering.store.js";
 import { OfferingPageInner } from "./OfferingPage.jsx";
 import { SpecialFundProvider } from "../../specialFund/specialFund.store.js";
@@ -9,10 +8,7 @@ import { SpecialFundPageInner } from "../../specialFund/pages/SpecialFundPage.js
 
 function OfferingFundsPage() {
   const [activeTab, setActiveTab] = useState("offerings");
-  const { can } = useContext(PermissionContext) || {};
   const guarded = useGuardedAction();
-  const canCreateOffering = useMemo(() => (typeof can === "function" ? can("offerings", "create") : false), [can]);
-  const canCreateFund = useMemo(() => (typeof can === "function" ? can("specialFunds", "create") : false), [can]);
 
   const offeringCreateRef = useRef(null);
   const fundCreateRef = useRef(null);
@@ -26,22 +22,22 @@ function OfferingFundsPage() {
             <p className="mt-2 text-gray-600 text-sm hidden md:block">Record and manage offerings and special church funds</p>
           </div>
           <div className="shrink-0">
-            {activeTab === "offerings" && canCreateOffering && (
+            {activeTab === "offerings" && (
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => guarded(() => offeringCreateRef.current?.())}
+                onClick={() => guarded(() => offeringCreateRef.current?.(), "offerings", "create")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Offering
               </button>
             )}
-            {activeTab === "funds" && canCreateFund && (
+            {activeTab === "funds" && (
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => guarded(() => fundCreateRef.current?.())}
+                onClick={() => guarded(() => fundCreateRef.current?.(), "specialFunds", "create")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>

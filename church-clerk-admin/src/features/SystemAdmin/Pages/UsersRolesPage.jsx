@@ -14,6 +14,7 @@ import {
   verifyUserEmailByAdminApi
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { roleLabel } from "../../../shared/utils/roleLabels.js";
 import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -24,6 +25,7 @@ import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import { useAuth } from "../../Auth/useAuth.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -41,6 +43,11 @@ const normalizeRoleKeyInput = (v) => String(v || "")
   .replace(/[^a-z0-9_\-]/g, "");
 
 function UsersRolesPage() {
+  const { user: currentUser, guardPermission } = useAuth();
+  // Only the super admin may create/edit/delete system-scope roles — the
+  // backend enforces it, and the UI should not offer what will be rejected.
+  const isSuperAdmin = String(currentUser?.role || "").trim().toLowerCase() === "superadmin";
+  const canManageScope = (scope) => scope !== "system" || isSuperAdmin;
   const [tab, setTab] = useState("users");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +55,7 @@ function UsersRolesPage() {
   const [roles, setRoles] = useState(null);
   const [customRoles, setCustomRoles] = useState([]);
   const [permissionModules, setPermissionModules] = useState(null);
+  const [systemModuleKeys, setSystemModuleKeys] = useState([]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -105,6 +113,13 @@ function UsersRolesPage() {
     return Array.isArray(list) ? list : [];
   }, [roles?.allRoles]);
 
+  // System-scope modules are only meaningful for system roles — hide them
+  // from the matrix when a church-scope role is being created/edited.
+  const moduleKeysForScope = (scope) =>
+    Object.keys(permissionModules || {}).filter(
+      (k) => scope === "system" || !systemModuleKeys.includes(k)
+    );
+
   const load = useCallback(
     async ({ nextPage } = {}) => {
       const actualPage = nextPage ?? page;
@@ -161,6 +176,7 @@ function UsersRolesPage() {
 
       const modules = catalogRes?.data?.modules;
       setPermissionModules(modules && typeof modules === "object" ? modules : null);
+      setSystemModuleKeys(Array.isArray(catalogRes?.data?.systemModules) ? catalogRes.data.systemModules : []);
     } catch (e) {
       setCustomRoles([]);
       setPermissionModules(null);
@@ -566,7 +582,7 @@ function UsersRolesPage() {
               value: roleFilter,
               onChange: setRoleFilter,
               placeholder: "All roles",
-              options: allRoles.map((r) => ({ label: r, value: r }))
+              options: allRoles.map((r) => ({ label: roleLabel(r), value: r }))
             }]}
           >
             <div className="text-xs text-gray-500">
@@ -648,7 +664,7 @@ function UsersRolesPage() {
                         <span className="hidden sm:inline">{truncateDesktopName(u?.email)}</span>
                       </td>
                       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{u?.phoneNumber || "—"}</td>
-                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{u?.role || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{roleLabel(u?.role) || "—"}</td>
                       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={u?.church?.name || ""}>
                         <span className="sm:hidden">{truncateMobileName(u?.church?.name)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(u?.church?.name)}</span>
@@ -664,27 +680,29 @@ function UsersRolesPage() {
                       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(u?.createdAt)}</td>
                       <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                         <div className="inline-flex items-center gap-1 justify-end">
-                          <button type="button" onClick={() => openEdit(u)}
-                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                            Edit
-                          </button>
-                          {u?.isEmailVerified === false ? (
-                            <button type="button" onClick={() => setVerifyEmailModal(u)}
-                              className="rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
-                              Verify Email
-                            </button>
-                          ) : null}
-                          <button type="button"
-                            onClick={() => onToggleSuspendUser(u)}
-                            disabled={suspendUserLoading === u._id}
-                            className={`rounded-md border px-2.5 py-1 text-xs font-semibold disabled:opacity-60 ${
-                              u?.isActive === false
-                                ? "border-green-200 bg-white text-green-700 hover:bg-green-50"
-                                : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
-                            }`}>
-                            {suspendUserLoading === u._id ? "…" : u?.isActive === false ? "Unsuspend" : "Suspend"}
-                          </button>
-                          <button type="button" onClick={() => setDeleteUserModal(u)}
+                          <>
+                              <button type="button" onClick={() => guardPermission("systemUsers", "update", () => openEdit(u))}
+                                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                                Edit
+                              </button>
+                              {u?.isEmailVerified === false ? (
+                                <button type="button" onClick={() => guardPermission("systemUsers", "update", () => setVerifyEmailModal(u))}
+                                  className="rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                                  Verify Email
+                                </button>
+                              ) : null}
+                              <button type="button"
+                                onClick={() => guardPermission("systemUsers", "update", () => onToggleSuspendUser(u))}
+                                disabled={suspendUserLoading === u._id}
+                                className={`rounded-md border px-2.5 py-1 text-xs font-semibold disabled:opacity-60 ${
+                                  u?.isActive === false
+                                    ? "border-green-200 bg-white text-green-700 hover:bg-green-50"
+                                    : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
+                                }`}>
+                                {suspendUserLoading === u._id ? "…" : u?.isActive === false ? "Unsuspend" : "Suspend"}
+                              </button>
+                            </>
+                          <button type="button" onClick={() => guardPermission("systemUsers", "delete", () => setDeleteUserModal(u))}
                             className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
                             Delete
                           </button>
@@ -835,7 +853,7 @@ function UsersRolesPage() {
                                         </td>
                                         <td className="py-1.5 px-3 whitespace-nowrap">
                                           <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                            {u.role || "—"}
+                                            {roleLabel(u.role) || "—"}
                                           </span>
                                         </td>
                                         <td className="py-1.5 px-3 whitespace-nowrap">
@@ -878,25 +896,11 @@ function UsersRolesPage() {
           <Card>
             <Card.Header title="System roles" />
             <Card.Body>
-              <div className="text-xs text-gray-500">Only superadmin and supportadmin can access the system admin portal.</div>
+              <div className="text-xs text-gray-500">Any account assigned an active system role can access the system admin portal.</div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(roles?.systemRoles || []).map((r) => (
                   <span key={r} className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
-                    {r}
-                  </span>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-
-          <Card>
-            <Card.Header title="Church roles" />
-            <Card.Body>
-              <div className="text-xs text-gray-500">Roles used inside a church dashboard.</div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(roles?.churchRoles || []).map((r) => (
-                  <span key={r} className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800">
-                    {r}
+                    {roleLabel(r)}
                   </span>
                 ))}
               </div>
@@ -908,7 +912,7 @@ function UsersRolesPage() {
               title="Custom roles"
               actions={
                 <>
-                  <Button variant="primary" size="sm" onClick={openCreate} disabled={loading}>
+                  <Button variant="primary" size="sm" onClick={() => guardPermission("systemRoles", "create", openCreate)} disabled={loading}>
                     Create role
                   </Button>
                   <Button variant="secondary" size="sm" onClick={loadRolesTab} disabled={loading}>
@@ -926,6 +930,7 @@ function UsersRolesPage() {
                     <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Key</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scope</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Actions</th>
@@ -939,6 +944,7 @@ function UsersRolesPage() {
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                           <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
@@ -947,7 +953,7 @@ function UsersRolesPage() {
                     </>
                   ) : customRoles.length === 0 ? (
                     <tr>
-                      <td colSpan={6}>
+                      <td colSpan={7}>
                         <EmptyState compact illustration="users" title="No custom roles found." />
                       </td>
                     </tr>
@@ -960,6 +966,9 @@ function UsersRolesPage() {
                         </td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.key || "—"}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.scope || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={r?.church?.name || r?.createdBy?.fullName || ""}>
+                          {r?.church?.name || (r?.createdBy?.fullName ? `${r.createdBy.fullName} (system admin)` : "—")}
+                        </td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6"><StatusChip value={r?.isActive === false ? "inactive" : "active"} /></td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.createdAt)}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6 text-right">
@@ -971,22 +980,26 @@ function UsersRolesPage() {
                             >
                               View
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => openEditRole(r)}
-                              disabled={loading}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openDeleteRole(r)}
-                              disabled={loading}
-                              className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
+                            {canManageScope(r?.scope) && (
+                              <button
+                                type="button"
+                                onClick={() => guardPermission("systemRoles", "update", () => openEditRole(r))}
+                                disabled={loading}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {canManageScope(r?.scope) && (
+                              <button
+                                type="button"
+                                onClick={() => guardPermission("systemRoles", "delete", () => openDeleteRole(r))}
+                                disabled={loading}
+                                className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1033,9 +1046,14 @@ function UsersRolesPage() {
                   onChange={(e) => setEditRole(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                 >
-                  {allRoles.map((r) => (
+                  {/* Only roles from the user's own scope may be assigned —
+                      church users get church roles, system users system roles. */}
+                  {[...new Set([
+                    editRole,
+                    ...((editingUser?.church ? roles?.churchRoles : roles?.systemRoles) || [])
+                  ].filter(Boolean))].map((r) => (
                     <option key={r} value={r}>
-                      {r}
+                      {roleLabel(r)}
                     </option>
                   ))}
                 </select>
@@ -1059,7 +1077,7 @@ function UsersRolesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={onSaveUser}
+                  onClick={() => guardPermission("systemUsers", "update", onSaveUser)}
                   disabled={loading}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
@@ -1096,9 +1114,9 @@ function UsersRolesPage() {
                   onChange={(e) => {
                     const next = e.target.value;
                     setCreateName(next);
-                    if (!createKey) setCreateKey(normalizeRoleKeyInput(next));
+                    setCreateKey(normalizeRoleKeyInput(next));
                   }}
-                  placeholder="e.g. Branch Manager"
+                  placeholder="e.g. Branch Pastor"
                   className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
@@ -1107,9 +1125,9 @@ function UsersRolesPage() {
                 <div className="text-xs font-semibold text-gray-600">Key</div>
                 <input
                   value={createKey}
-                  onChange={(e) => setCreateKey(normalizeRoleKeyInput(e.target.value))}
-                  placeholder="e.g. branch_manager"
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  readOnly
+                  placeholder="e.g. branch_pastor"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none bg-gray-50 text-gray-500 cursor-not-allowed"
                 />
                 <div className="mt-1 text-xs text-gray-500">Used when assigning roles to users.</div>
               </div>
@@ -1122,7 +1140,7 @@ function UsersRolesPage() {
                   className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   <option value="church">church</option>
-                  <option value="system">system</option>
+                  {isSuperAdmin && <option value="system">system</option>}
                 </select>
               </div>
 
@@ -1149,7 +1167,7 @@ function UsersRolesPage() {
                   <div className="text-sm text-gray-600">Permission catalog not loaded.</div>
                 ) : (
                   <div className="space-y-4">
-                    {Object.keys(permissionModules).map((moduleKey) => {
+                    {moduleKeysForScope(createScope).map((moduleKey) => {
                       const actions = Array.isArray(permissionModules[moduleKey]) ? permissionModules[moduleKey] : [];
                       return (
                         <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
@@ -1197,7 +1215,7 @@ function UsersRolesPage() {
               </button>
               <button
                 type="button"
-                onClick={onCreateRole}
+                onClick={() => guardPermission("systemRoles", "create", onCreateRole)}
                 disabled={loading || !createName.trim() || !createKey.trim()}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -1256,7 +1274,7 @@ function UsersRolesPage() {
                   <div className="text-sm text-gray-600">Permission catalog not loaded.</div>
                 ) : (
                   <div className="space-y-4">
-                    {Object.keys(permissionModules).map((moduleKey) => {
+                    {moduleKeysForScope(viewRole?.scope).map((moduleKey) => {
                       const actions = Array.isArray(permissionModules[moduleKey]) ? permissionModules[moduleKey] : [];
                       const resolved = buildMatrixFromRole(viewRole?.permissions);
                       return (
@@ -1350,7 +1368,7 @@ function UsersRolesPage() {
                   <div className="text-sm text-gray-600">Permission catalog not loaded.</div>
                 ) : (
                   <div className="space-y-4">
-                    {Object.keys(permissionModules).map((moduleKey) => {
+                    {moduleKeysForScope(editingRole?.scope).map((moduleKey) => {
                       const actions = Array.isArray(permissionModules[moduleKey]) ? permissionModules[moduleKey] : [];
                       return (
                         <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
@@ -1401,7 +1419,7 @@ function UsersRolesPage() {
               </button>
               <button
                 type="button"
-                onClick={onSaveRoleEdit}
+                onClick={() => guardPermission("systemRoles", "update", onSaveRoleEdit)}
                 disabled={loading || !editRoleName.trim()}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -1449,7 +1467,7 @@ function UsersRolesPage() {
               </button>
               <button
                 type="button"
-                onClick={onVerifyUserEmail}
+                onClick={() => guardPermission("systemUsers", "update", onVerifyUserEmail)}
                 disabled={verifyEmailLoading}
                 className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >

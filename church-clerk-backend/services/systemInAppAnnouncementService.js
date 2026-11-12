@@ -142,7 +142,7 @@ const createAnnouncement = async ({ body, userId }) => {
   });
 
   if (created.kind === "message" && status === "sent" && created.displayTypes.includes("notification")) {
-    const userQuery = resolveTargetUserQuery({ target: created.target });
+    const userQuery = await resolveTargetUserQuery({ target: created.target });
     if (userQuery) {
       const users = await User.find(userQuery).select("_id").lean();
       for (const u of users) {
@@ -262,7 +262,7 @@ const updateAnnouncement = async ({ id, body, userId }) => {
   await existing.save();
 
   if (existing.kind === "message" && existing.status === "sent" && existing.displayTypes.includes("notification")) {
-    const userQuery = resolveTargetUserQuery({ target: existing.target });
+    const userQuery = await resolveTargetUserQuery({ target: existing.target });
     if (userQuery) {
       const users = await User.find(userQuery).select("_id").lean();
       for (const u of users) {
@@ -469,7 +469,7 @@ const releaseDueScheduledSystemInAppAnnouncements = async () => {
     const willNotify = Array.isArray(ann?.displayTypes) && ann.displayTypes.includes("notification");
     if (!willNotify) continue;
 
-    const userQuery = resolveTargetUserQuery({ target: ann.target });
+    const userQuery = await resolveTargetUserQuery({ target: ann.target });
     if (!userQuery) continue;
 
     const users = await User.find(userQuery).select("_id").lean();

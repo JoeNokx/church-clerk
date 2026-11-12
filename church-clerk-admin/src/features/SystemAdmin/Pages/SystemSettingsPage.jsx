@@ -7,10 +7,9 @@ import {
   rejectChurchSenderId,
   updateSystemSettings,
   getSystemUsers,
+  getSystemRoles,
   updateSystemUser,
   deleteSystemUserApi,
-  getGovernanceFlagsSnapshot,
-  toggleGovernanceFlags
 } from "../Services/systemAdmin.api.js";
 import { updateMyPassword, updateMyProfile, registerSystemAdmin, changeAdminEmail } from "../../Auth/services/auth.api.js";
 import Spinner from "../../../shared/components/Spinner.jsx";
@@ -22,9 +21,10 @@ import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/in
 import Button from "../../../shared/components/Button/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { roleLabel } from "../../../shared/utils/roleLabels.js";
 
 function SystemSettingsPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, guardPermission } = useAuth();
 
   const normalizedRole = useMemo(() => {
     return String(user?.role || "")
@@ -35,10 +35,6 @@ function SystemSettingsPage() {
 
   const isSuperAdmin = useMemo(() => {
     return normalizedRole === "superadmin";
-  }, [normalizedRole]);
-
-  const isSupportAdmin = useMemo(() => {
-    return normalizedRole === "supportadmin";
   }, [normalizedRole]);
 
   const trialOptions = useMemo(() => [3, 7, 14, 21, 30, 40], []);
@@ -70,12 +66,6 @@ function SystemSettingsPage() {
   const [referralBonusDays, setReferralBonusDays] = useState("30");
   const [usdToGhsRate, setUsdToGhsRate] = useState("10");
 
-  // Governance flags
-  const [govLoading, setGovLoading] = useState(false);
-  const [govError, setGovError] = useState("");
-  const [enforceBackdating, setEnforceBackdating] = useState(false);
-  const [enforceImmutability, setEnforceImmutability] = useState(false);
-
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
@@ -96,7 +86,8 @@ function SystemSettingsPage() {
   const [emailChangeError, setEmailChangeError] = useState("");
   const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
 
-  const [adminForm, setAdminForm] = useState({ fullName: "", email: "", phoneNumber: "", password: "", role: "supportadmin" });
+  const [adminForm, setAdminForm] = useState({ fullName: "", email: "", phoneNumber: "", password: "", role: "" });
+  const [systemRoleKeys, setSystemRoleKeys] = useState([]);
   const [adminFormLoading, setAdminFormLoading] = useState(false);
   const [adminFormError, setAdminFormError] = useState("");
   const [adminFormSuccess, setAdminFormSuccess] = useState("");
@@ -116,14 +107,19 @@ function SystemSettingsPage() {
   const refreshAdminList = () => {
     setAdminListLoading(true);
     Promise.all([
-      getSystemUsers({ page: 1, limit: 50, role: "superadmin" }),
-      getSystemUsers({ page: 1, limit: 50, role: "supportadmin" })
+      getSystemRoles(),
+      getSystemUsers({ page: 1, limit: 200 })
     ])
-      .then(([sa, spa]) => {
-        setAdminList([
-          ...(Array.isArray(sa?.data?.data) ? sa.data.data : []),
-          ...(Array.isArray(spa?.data?.data) ? spa.data.data : [])
-        ]);
+      .then(([rolesRes, usersRes]) => {
+        const keys = Array.isArray(rolesRes?.data?.data?.systemRoles)
+          ? rolesRes.data.data.systemRoles
+          : Array.isArray(rolesRes?.data?.systemRoles)
+            ? rolesRes.data.systemRoles
+            : [];
+        setSystemRoleKeys(keys);
+        const users = Array.isArray(usersRes?.data?.data) ? usersRes.data.data : [];
+        // System admin accounts are the users with no church attached.
+        setAdminList(users.filter((u) => !u?.church));
       })
       .catch(() => {})
       .finally(() => setAdminListLoading(false));
@@ -157,46 +153,12 @@ function SystemSettingsPage() {
   }, [load]);
 
   useEffect(() => {
-    // Load governance flags snapshot
-    setGovLoading(true);
-    setGovError("");
-    getGovernanceFlagsSnapshot()
-      .then((res) => {
-        const snap = res?.data || {};
-        setEnforceBackdating(Boolean(snap?.enforceBackdating));
-        setEnforceImmutability(Boolean(snap?.enforceImmutability));
-      })
-      .catch((e) => {
-        setGovError(e?.response?.data?.message || e?.message || "Failed to load governance flags");
-      })
-      .finally(() => setGovLoading(false));
-  }, []);
-
-  const onToggleFlag = async (key, value) => {
-    if (!canSave) return;
-    setGovError("");
-    setGovLoading(true);
-    const prev = { enforceBackdating, enforceImmutability };
-    if (key === "enforceBackdating") setEnforceBackdating(value);
-    if (key === "enforceImmutability") setEnforceImmutability(value);
-    try {
-      await toggleGovernanceFlags({ [key]: value });
-    } catch (e) {
-      setGovError(e?.response?.data?.message || e?.message || "Failed to update governance flag");
-      setEnforceBackdating(prev.enforceBackdating);
-      setEnforceImmutability(prev.enforceImmutability);
-    } finally {
-      setGovLoading(false);
-    }
-  };
-
-  useEffect(() => {
     setFullName(String(user?.fullName || ""));
     setEmail(String(user?.email || ""));
     setPhoneNumber(String(user?.phoneNumber || ""));
   }, [user?.email, user?.fullName, user?.phoneNumber]);
 
-  const canSave = isSuperAdmin || isSupportAdmin;
+  const canSave = !user?.church;
 
   const fmtDateTime = useCallback((value) => {
     if (!value) return "—";
@@ -338,8 +300,10 @@ function SystemSettingsPage() {
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
                 <select value={adminForm.role} onChange={(e) => setAdminForm((f) => ({ ...f, role: e.target.value }))}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                  <option value="supportadmin">Support Admin</option>
-                  <option value="superadmin">Super Admin</option>
+                  <option value="">Select a role…</option>
+                  {systemRoleKeys.map((key) => (
+                    <option key={key} value={key}>{roleLabel(key)}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -352,7 +316,7 @@ function SystemSettingsPage() {
                   setAdminFormError("");
                   setAdminFormSuccess("");
                   const { fullName, email, phoneNumber, password, role } = adminForm;
-                  if (!fullName || !email || !phoneNumber || !password) {
+                  if (!fullName || !email || !phoneNumber || !password || !role) {
                     setAdminFormError("All fields are required.");
                     return;
                   }
@@ -364,7 +328,7 @@ function SystemSettingsPage() {
                   try {
                     await registerSystemAdmin({ fullName, email, phoneNumber, password, role });
                     setAdminFormSuccess(`Admin account for ${email} created successfully.`);
-                    setAdminForm({ fullName: "", email: "", phoneNumber: "", password: "", role: "supportadmin" });
+                    setAdminForm({ fullName: "", email: "", phoneNumber: "", password: "", role: "" });
                     refreshAdminList();
                   } catch (e) {
                     setAdminFormError(e?.response?.data?.message || e?.message || "Failed to create admin");
@@ -399,7 +363,7 @@ function SystemSettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 max-md:text-xs text-sm">
-                    {adminList.filter(u => u?.role === "superadmin" || u?.role === "supportadmin").map((u) => (
+                    {adminList.map((u) => (
                       <tr key={u._id}>
                         <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-medium text-gray-900 whitespace-nowrap px-4 md:px-6" title={u.fullName || ""}>
                           <span className="sm:hidden">{truncateMobileName(u.fullName)}</span>
@@ -473,8 +437,9 @@ function SystemSettingsPage() {
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
                   <select value={adminEditRole} onChange={(e) => setAdminEditRole(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                    <option value="supportadmin">Support Admin</option>
-                    <option value="superadmin">Super Admin</option>
+                    {[...new Set([adminEditRole, ...systemRoleKeys].filter(Boolean))].map((key) => (
+                      <option key={key} value={key}>{roleLabel(key)}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="px-6 pb-4 flex justify-end gap-2">
@@ -538,51 +503,6 @@ function SystemSettingsPage() {
               You can view system settings, but only a system admin can update them.
             </div>
           ) : null}
-
-          <Card>
-            <Card.Header title="Financial Governance" />
-            <div className="text-xs text-gray-500">Control backdating and immutability across all financial modules</div>
-
-            {govError ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{govError}</div>
-            ) : null}
-
-            <Card.Body>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Enforce Backdating Control</div>
-                  <div className="mt-0.5 text-xs text-gray-500">Backdated creates require admin approval</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={enforceBackdating}
-                    onChange={(e) => onToggleFlag("enforceBackdating", e.target.checked)}
-                    disabled={!canSave || govLoading}
-                  />
-                  <span className="text-sm text-gray-700">{enforceBackdating ? "On" : "Off"}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Enforce Immutability</div>
-                  <div className="mt-0.5 text-xs text-gray-500">Updates/deletes are disabled; use adjustments</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={enforceImmutability}
-                    onChange={(e) => onToggleFlag("enforceImmutability", e.target.checked)}
-                    disabled={!canSave || govLoading}
-                  />
-                  <span className="text-sm text-gray-700">{enforceImmutability ? "On" : "Off"}</span>
-                </div>
-              </div>
-            </div>
-            </Card.Body>
-          </Card>
 
           <Card>
             <Card.Header title="Free Trial Duration" />
@@ -698,7 +618,7 @@ function SystemSettingsPage() {
               size="lg"
               loading={saving}
               loadingText="Saving…"
-              onClick={onSave}
+              onClick={() => guardPermission("systemBilling", "update", onSave)}
               disabled={!canSave}
             >
               Save changes
@@ -907,7 +827,7 @@ function SystemSettingsPage() {
                         loading={senderIdActionLoading}
                         loadingText="Working…"
                         disabled={!senderIdSelected?._id}
-                        onClick={async () => {
+                        onClick={() => guardPermission("systemChurches", "update", async () => {
                           if (!senderIdSelected?._id) return;
                           setSenderIdActionLoading(true);
                           setSenderIdActionError("");
@@ -923,7 +843,7 @@ function SystemSettingsPage() {
                           } finally {
                             setSenderIdActionLoading(false);
                           }
-                        }}
+                        })}
                       >
                         Reject
                       </Button>
@@ -932,7 +852,7 @@ function SystemSettingsPage() {
                         loading={senderIdActionLoading}
                         loadingText="Working…"
                         disabled={!senderIdSelected?._id}
-                        onClick={async () => {
+                        onClick={() => guardPermission("systemChurches", "update", async () => {
                           if (!senderIdSelected?._id) return;
                           setSenderIdActionLoading(true);
                           setSenderIdActionError("");
@@ -948,7 +868,7 @@ function SystemSettingsPage() {
                           } finally {
                             setSenderIdActionLoading(false);
                           }
-                        }}
+                        })}
                       >
                         Approve
                       </Button>

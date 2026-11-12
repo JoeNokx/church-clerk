@@ -3,11 +3,13 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import PermissionContext from "../../permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
 
 function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const store = useContext(WelfareContext);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
@@ -161,7 +163,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
       };
 
       try {
-        if (!canEdit) return;
+        if (!canEdit) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
         await store?.updateContribution?.(initialData?._id, payload);
         onSuccess?.();
       } catch (e2) {
@@ -190,7 +192,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
     }
 
     try {
-      if (!canCreate) return;
+      if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
       await store?.createContribution?.(payloads.length === 1 ? payloads[0] : { entries: payloads });
       onSuccess?.();
     } catch (e2) {

@@ -432,16 +432,14 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                     <div className="mt-1 text-gray-500 text-xs">Payments recorded for this pledge</div>
                   </div>
 
-                  {canCreatePayment ? (
-                    <button
+                  {(<button
                       type="button"
-                      onClick={() => guarded(() => setNewPaymentOpen(true))}
+                      onClick={() => guarded(() => setNewPaymentOpen(true), "pledges", "create")}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
                     >
                       <span className="leading-none text-lg">+</span>
                       Add Payment
-                    </button>
-                  ) : null}
+                    </button>)}
                 </div>
 
                 {paymentsLoading ? (
@@ -507,7 +505,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                               <td className="py-1.5 whitespace-nowrap px-4">
                                 <TableKebabMenu items={[
                                   { label: "View", onClick: () => setViewRow(p) },
-                                  canEditPayment && { label: "Edit", onClick: () => guarded(() => openEdit(p)) }
+                                  { label: "Edit", onClick: () => guarded(() => openEdit(p), "pledges", "update") }
                                 ]} />
                               </td>
                             </tr>

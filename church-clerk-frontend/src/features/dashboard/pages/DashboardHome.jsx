@@ -296,9 +296,9 @@ function DashboardOverview({ onNavigate }) {
 
   const queryClient = useQueryClient();
 
-  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "read") : false), [can]);
 
-  const canViewPrograms = useMemo(() => (typeof can === "function" ? can("programs", "view") : false), [can]);
+  const canViewPrograms = useMemo(() => (typeof can === "function" ? can("programs", "read") : false), [can]);
 
   const year = useMemo(() => new Date().getFullYear(), []);
 

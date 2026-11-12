@@ -4,11 +4,11 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import { getProgram as apiGetProgram, updateProgram as apiUpdateProgram } from "../services/program.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
-  "Service",
-  "Worship",
+  "Worship & Praises",
   "Prayers",
   "Outreach",
   "Bible Study",
@@ -29,6 +29,7 @@ function Field({ label, children }) {
 
 function ProgramEditPage() {
   const { can } = useContext(PermissionContext) || {};
+  const { showLockModal } = useSubscriptionLock();
   const canEdit = useMemo(() => (typeof can === "function" ? can("programs", "update") : false), [can]);
 
   const navigate = useNavigate();
@@ -111,10 +112,11 @@ function ProgramEditPage() {
     setIsSubmitting(true);
 
     if (!canEdit) {
-      setError("You do not have permission to edit programs.");
+          setError("You do not have permission to edit programs.");
       setIsSubmitting(false);
-      return;
-    }
+      showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
+          return;
+        }
 
     if (!programId) {
       setError("Program id is missing");
@@ -305,7 +307,7 @@ function ProgramEditPage() {
               variant="primary"
               loading={isSubmitting}
               loadingText="Saving..."
-              disabled={!canEdit || loading}
+              disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               Save Changes
