@@ -9,6 +9,7 @@ import SubscriptionStatusBanner from "../shared/components/SubscriptionStatusBan
 import { AnimatePresence, motion } from "framer-motion";
 import InAppAnnouncementsHost from "../features/inAppAnnouncements/components/InAppAnnouncementsHost.jsx";
 import GlobalSearch from "../features/search/components/GlobalSearch.jsx";
+import ConfirmChurchSwitchModal from "../shared/components/ConfirmChurchSwitchModal.jsx";
 
 function MobileSearchBanner({ user, churchName }) {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ function DashboardLayout() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
 
   const homeChurchName = useMemo(() => {
     const c = user?.church;
@@ -56,6 +58,14 @@ function DashboardLayout() {
   }, [user?.isActive]);
 
   const isHqMonitoringBranch = churchCtx?.isMonitoringBranch || false;
+
+  const navigate = useNavigate();
+
+  const handleExitBranch = () => {
+    setExitConfirmOpen(false);
+    churchCtx?.exitBranchMonitoring?.();
+    navigate("/dashboard");
+  };
 
   const isReadOnly = isChurchSuspended || isUserSuspended;
 
@@ -136,6 +146,36 @@ function DashboardLayout() {
               </div>
             </div>
           )}
+          {isHqMonitoringBranch && (
+            <div className="mb-4 border-y-2 border-blue-400 bg-blue-50 px-4 py-2 text-blue-900 text-sm">
+              <div className="flex items-center gap-3">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0 text-blue-500" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M6 3v12"/>
+                  <path d="M18 9a3 3 0 100-6 3 3 0 000 6z"/>
+                  <path d="M6 21a3 3 0 100-6 3 3 0 000 6z"/>
+                  <path d="M18 9a9 9 0 01-9 9"/>
+                </svg>
+                <div className="min-w-0 flex-1">
+                  <span>
+                    Viewing{" "}
+                    <span className="font-bold">
+                      {activeChurch?.name || "a branch"}{activeChurch?.city ? `, ${activeChurch.city}` : ""}
+                    </span>
+                  </span>
+                  <span className="ml-1 text-blue-800">
+                    — you can't modify any data here.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExitConfirmOpen(true)}
+                  className="shrink-0 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                >
+                  Exit Branch
+                </button>
+              </div>
+            </div>
+          )}
           <SubscriptionStatusBanner />
           <InAppAnnouncementsHost />
           </div>
@@ -161,6 +201,14 @@ function DashboardLayout() {
           </div>
         </main>
       </div>
+
+      <ConfirmChurchSwitchModal
+        open={exitConfirmOpen}
+        churchDisplayName={churchCtx?.hqChurch?.name}
+        mode="hq"
+        onCancel={() => setExitConfirmOpen(false)}
+        onConfirm={handleExitBranch}
+      />
 
     </div>
   )

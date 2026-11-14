@@ -145,6 +145,18 @@ const expandLegacyPermissions = (resolved) => {
   return out;
 };
 
+// Module permissions appear as an array ["read","create"] or a map
+// { read: true, create: false } depending on where they were saved.
+const toModuleMap = (mod) => {
+  const out = {};
+  if (Array.isArray(mod)) {
+    for (const action of mod) out[action] = true;
+  } else if (mod && typeof mod === "object") {
+    for (const [k, v] of Object.entries(mod)) out[k] = Boolean(v);
+  }
+  return out;
+};
+
 const deepMergePermissions = (configDefaults, dbPermissions) => {
   if (!configDefaults) return dbPermissions;
   if (!dbPermissions || typeof dbPermissions !== "object") return configDefaults;
@@ -160,9 +172,13 @@ const deepMergePermissions = (configDefaults, dbPermissions) => {
         .find((v) => v && typeof v === "object");
     if (!dbModule || typeof dbModule !== "object") continue;
 
-    const hasAnyTrue = Object.values(dbModule).some(Boolean);
+    const dbMap = toModuleMap(dbModule);
+    const hasAnyTrue = Object.values(dbMap).some(Boolean);
     if (hasAnyTrue) {
-      result[moduleKey] = dbModule;
+      // Merge per action: the DB doc overrides only the keys it actually
+      // defines. Keys absent from an old doc (e.g. an action added to the
+      // module later, like branches.view) inherit the config default.
+      result[moduleKey] = { ...toModuleMap(result[moduleKey]), ...dbMap };
     }
   }
 

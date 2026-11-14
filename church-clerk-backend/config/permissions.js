@@ -5,7 +5,7 @@ const READ_VIEW = ["read"];
 
 export const MODULES = {
   dashboard: ["read"],
-  branches: CRUD_VIEW,
+  branches: ["read", "create", "delete", "view"],
   members: [...CRUD_VIEW, "import"],
   organisation: CRUD_VIEW,
   programs: CRUD_VIEW,

@@ -10,6 +10,7 @@ import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import AddBranchesModal from "./AddBranchesModal.jsx";
 import { getMyBranches } from "../services/church.api.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_OPTIONS = [
   { label: "All Status", value: "all" },
@@ -18,6 +19,7 @@ const STATUS_OPTIONS = [
 ];
 
 function AllBranchesTab({ onViewBranch }) {
+  const guarded = useGuardedAction();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [branches, setBranches] = useState([]);
@@ -209,7 +211,7 @@ function AllBranchesTab({ onViewBranch }) {
 
             <button
               type="button"
-              onClick={() => setAddOpen(true)}
+              onClick={() => guarded(() => setAddOpen(true), "branches", "create")}
               className="inline-flex h-11 md:h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
@@ -275,7 +277,7 @@ function AllBranchesTab({ onViewBranch }) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => onViewBranch?.(b)}
+                          onClick={() => guarded(() => onViewBranch?.(b), "branches", "view")}
                           className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                         >
                           View Church

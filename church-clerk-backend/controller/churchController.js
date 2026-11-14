@@ -410,6 +410,15 @@ const updateMyChurchProfile = async (req, res) => {
     const branchIds = updateData.branchIds;
     delete updateData.branchIds;
 
+    // Changing the linked-branch list requires branches.create on top of the
+    // general profile update permission (enforced on the route).
+    if (branchIds !== undefined) {
+      const perms = req.permissions || {};
+      if (!perms.super && !perms?.branches?.create) {
+        return res.status(403).json({ message: "You do not have permission to perform this action" });
+      }
+    }
+
     // Update church
     const updatedChurch = await Church.findOneAndUpdate(
       query,
@@ -429,6 +438,15 @@ const updateMyChurchProfile = async (req, res) => {
       await Church.updateMany(
         { _id: { $in: branchIds }, type: "Branch" },
         { $set: { parentChurch: updatedChurch._id } }
+      );
+    }
+
+    // Moving away from Headquarters releases all linked branches — otherwise
+    // their parentChurch pointers dangle and no other HQ can adopt them.
+    if (updatedChurch && updatedChurch.type !== "Headquarters") {
+      await Church.updateMany(
+        { parentChurch: updatedChurch._id },
+        { $set: { parentChurch: null } }
       );
     }
 

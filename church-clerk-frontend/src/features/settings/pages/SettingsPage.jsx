@@ -5,7 +5,7 @@ import { useGuardedAction } from "../../../shared/context/SubscriptionLockContex
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
-import { getChurchProfile, requestMyChurchSenderId, searchHeadquartersChurches, searchBranchChurches, updateChurchProfile } from "../../church/services/church.api.js";
+import { getChurchProfile, getMyBranches, requestMyChurchSenderId, searchHeadquartersChurches, searchBranchChurches, updateChurchProfile } from "../../church/services/church.api.js";
 import Skeleton from "react-loading-skeleton";
 import Select from "react-select";
 import currencyCodes from "currency-codes";
@@ -446,6 +446,28 @@ function SettingsPage() {
   }, [currency, currencyLocked, currencyOptions]);
 
   const isBranch = type === "Branch";
+
+  // When an HQ church picks a non-HQ type, warn that linked branches get
+  // released — the backend clears their parentChurch on save.
+  const [linkedBranchCount, setLinkedBranchCount] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (activeChurch?.type === "Headquarters" && type !== "Headquarters") {
+      (async () => {
+        try {
+          const res = await getMyBranches({ page: 1, limit: 1 });
+          const payload = res?.data?.data ?? res?.data;
+          const total = payload?.pagination?.total ?? payload?.total ?? (Array.isArray(payload?.branches) ? payload.branches.length : null);
+          if (!cancelled) setLinkedBranchCount(typeof total === "number" ? total : null);
+        } catch {
+          if (!cancelled) setLinkedBranchCount(null);
+        }
+      })();
+    } else {
+      setLinkedBranchCount(null);
+    }
+    return () => { cancelled = true; };
+  }, [type, activeChurch?.type]);
 
   const avatarUrl = avatarPreviewUrl || (avatarRemoved ? "" : (
     user?.profileImageUrl ||
@@ -2225,6 +2247,16 @@ function SettingsPage() {
                     <div>Switching to <strong>Headquarters</strong> requires an active <strong>Premium</strong> or <strong>Enterprise</strong> subscription. Please upgrade on the Billing page first.</div>
                   </div>
                 )}
+                {activeChurch?.type === "Headquarters" && type !== "Headquarters" && (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs">
+                    <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700" aria-hidden="true">
+                      <path d="M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div>
+                      Switching to <strong>{type}</strong> will unlink {linkedBranchCount !== null && linkedBranchCount > 0 ? <>all <strong>{linkedBranchCount}</strong> linked branch church{linkedBranchCount === 1 ? "" : "es"}</> : "any branch churches linked to this headquarters"}.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {type === "Headquarters" && (
@@ -2235,7 +2267,7 @@ function SettingsPage() {
                       {selectedBranches.map((b) => (
                         <span key={b._id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-blue-800 text-xs font-medium">
                           {b.name}
-                          <button type="button" disabled={false} onClick={() => guarded(() => setSelectedBranches((prev) => prev.filter((x) => x._id !== b._id)), "settings", "update")} className="ml-0.5 text-blue-500 hover:text-blue-700">✕</button>
+                          <button type="button" disabled={false} onClick={() => guarded(() => setSelectedBranches((prev) => prev.filter((x) => x._id !== b._id)), "branches", "create")} className="ml-0.5 text-blue-500 hover:text-blue-700">✕</button>
                         </span>
                       ))}
                     </div>
@@ -2245,7 +2277,7 @@ function SettingsPage() {
                     placeholder="Search branch churches to link"
                     value={branchSearch}
                     onChange={(e) => { setBranchSearch(e.target.value); setBranchDropdownOpen(true); }}
-                    onFocus={() => setBranchDropdownOpen(true)}
+                    onFocus={(e) => { if (!guarded(() => setBranchDropdownOpen(true), "branches", "create")) e.target.blur(); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     disabled={!canWrite}
                   />
@@ -2278,7 +2310,7 @@ function SettingsPage() {
                                     setBranchSearch("");
                                     setBranchResults([]);
                                     setBranchDropdownOpen(false);
-                                  }, "settings", "update")}
+                                  }, "branches", "create")}
                                   className={`w-full text-left px-4 py-3 transition-colors ${takenBy ? "cursor-not-allowed bg-gray-50/70" : "hover:bg-gray-50"}`}
                                 >
                                   <div className={`font-semibold truncate text-sm ${takenBy ? "text-gray-400" : "text-gray-900"}`}>

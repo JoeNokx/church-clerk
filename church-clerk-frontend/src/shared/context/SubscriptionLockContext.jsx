@@ -192,10 +192,10 @@ export function SubscriptionLockProvider({ children }) {
    */
   const guardAction = useCallback(
     (action, moduleKey, permissionAction) => {
-      if (moduleKey && typeof permCan === "function" && !permCan(moduleKey, permissionAction)) {
-        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
-        return false;
-      }
+      // State denials come before the permission matrix so the modal names
+      // the real reason: while an HQ admin monitors a branch every write
+      // reads can()=false via canEdit, which would otherwise mis-report as
+      // "No Permission" instead of "Read-Only View".
       if (accountDeactivated) {
         showLockModal(
           "This account has been deactivated. You can still view your data, but you cannot make changes.",
@@ -212,6 +212,10 @@ export function SubscriptionLockProvider({ children }) {
       }
       if (lockState.isLocked) {
         showLockModal();
+        return false;
+      }
+      if (moduleKey && typeof permCan === "function" && !permCan(moduleKey, permissionAction)) {
+        showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" });
         return false;
       }
       if (typeof action === "function") action();

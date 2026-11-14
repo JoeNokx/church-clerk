@@ -6,7 +6,7 @@ import Plan from "../models/billingModel/planModel.js";
 
 import { isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
 
-import { isSystemRole } from "../utils/resolvePermissions.js";
+import { isSystemRole, resolvePermissions } from "../utils/resolvePermissions.js";
 
 
 
@@ -149,6 +149,28 @@ export const setActiveChurch = async (req, res, next) => {
       ) {
 
         return res.status(403).json({ message: "Unauthorized branch access" });
+
+      }
+
+      // HQ users stepping into a branch context need the explicit
+
+      // branches.view permission — being at HQ isn't enough on its own.
+
+      const switchPerms = await resolvePermissions(
+
+        req.user.role,
+
+        req.user?.roleRef,
+
+        "church",
+
+        userChurchId
+
+      );
+
+      if (!switchPerms?.super && !switchPerms?.branches?.view) {
+
+        return res.status(403).json({ message: "You do not have permission to view this branch", readOnly: true });
 
       }
 

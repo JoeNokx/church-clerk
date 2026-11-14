@@ -39,7 +39,7 @@ export const ROLE_PERMISSIONS = {
   // CHURCH ROLES
   churchclerkadmin: {
     dashboard: ["read", "create", "update", "delete"],
-    branches: ["read", "create", "update", "delete"],
+    branches: ["read", "create", "delete", "view"],
     members: ["read", "create", "update", "delete", "import"],
     attendance: ["read", "create", "update", "delete"],
     visitors: ["read", "create", "update", "delete", "convert"],
