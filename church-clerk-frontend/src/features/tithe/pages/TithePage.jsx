@@ -394,10 +394,9 @@ function TithePageInner() {
   const guarded = useGuardedAction();
 
   const [kpi, setKpi] = useState(null);
-  const [view, setView] = useState(() => {
-    const saved = localStorage.getItem("tithe_default_mode");
-    return saved === "individual" || saved === "aggregate" ? saved : "landing";
-  }); // landing | individual | aggregate
+  // The recording mode is a church-level setting (church.titheRecordingMode),
+  // not a per-user preference — every user lands in the mode the church chose.
+  const view = churchStore?.activeChurch?.titheRecordingMode || store?.recordingMode || "landing";
 
   const [isIndividualFormOpen, setIsIndividualFormOpen] = useState(false);
   const [isAggregateFormOpen, setIsAggregateFormOpen] = useState(false);
@@ -410,8 +409,6 @@ function TithePageInner() {
 
   const mode = view === "aggregate" ? "aggregate" : "individual";
 
-  const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
-  const canUpdateMode = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
 
   const refreshKpi = useCallback(async () => {
     if (!store?.activeChurchId) return;
@@ -555,19 +552,15 @@ function TithePageInner() {
                 kind="individual"
                 disabled={store?.loading}
                 onSelect={() => guarded(async () => {
-                  localStorage.setItem("tithe_default_mode", "individual");
                   await store?.setRecordingMode?.("individual");
-                  setView("individual");
-                })}
+                }, "settingsChurchProfile", "update")}
               />
               <ModeSelectCard
                 kind="aggregate"
                 disabled={store?.loading}
                 onSelect={() => guarded(async () => {
-                  localStorage.setItem("tithe_default_mode", "aggregate");
                   await store?.setRecordingMode?.("aggregate");
-                  setView("aggregate");
-                })}
+                }, "settingsChurchProfile", "update")}
               />
             </div>
           </div>

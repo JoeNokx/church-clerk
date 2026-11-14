@@ -2,6 +2,7 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
+import { addInterval } from "../../utils/dateBillingUtils.js";
 
 const INTERVAL_DAYS = {
   monthly: 30,
@@ -50,7 +51,7 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
 
   // Upgrading from a free plan: no credit to give, start a fresh full billing cycle from today.
   if (currentPrice === 0) {
-    const freshNextBillingDate = new Date(now.getTime() + days * MS_PER_DAY);
+    const freshNextBillingDate = addInterval(now, normalizedKey);
     return {
       totalDays: days,
       remainingDays: days,
@@ -69,10 +70,11 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
   const remainingDays = Math.ceil(remainingMs / MS_PER_DAY);
   const remainingFraction = Math.min(1, Math.max(0, remainingDays / days));
 
-  // Billing cycle has already expired: no meaningful remaining period to prorate.
-  // Charge the full new plan price and start a fresh cycle from today.
+  // Billing cycle has already expired (or a paid subscription has no
+  // nextBillingDate — treat the same): no meaningful remaining period to
+  // prorate. Charge the full new plan price and start a fresh cycle from today.
   if (remainingDays === 0) {
-    const freshNextBillingDate = new Date(now.getTime() + days * MS_PER_DAY);
+    const freshNextBillingDate = addInterval(now, normalizedKey);
     return {
       totalDays: days,
       remainingDays: days,
@@ -96,7 +98,7 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
   // gets the prorated period PLUS a clean gap before the next full charge.
   let retainNextBillingDate = nextBilling;
   if (retainNextBillingDate.getTime() <= now.getTime() + MS_PER_DAY) {
-    retainNextBillingDate = new Date(retainNextBillingDate.getTime() + days * MS_PER_DAY);
+    retainNextBillingDate = addInterval(retainNextBillingDate, normalizedKey);
   }
 
   return {
@@ -132,10 +134,6 @@ export const calculateUpgradeProration = async (req, res) => {
 
     if (!subscription) {
       return res.status(404).json({ message: "Subscription not found" });
-    }
-
-    if (!subscription.nextBillingDate) {
-      return res.status(400).json({ message: "No billing cycle found. Please contact support." });
     }
 
     const currentPlan = subscription.plan;

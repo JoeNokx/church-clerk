@@ -540,7 +540,6 @@ function SettingsPage() {
       if (typeof switchChurch === "function") {
         await switchChurch(activeChurch._id);
       }
-      localStorage.setItem("tithe_default_mode", next);
       showSuccess("Church tithe mode updated");
       setTitheModeSuccess("Tithe recording mode updated. Your previous records remain safe.");
     } catch (e) {

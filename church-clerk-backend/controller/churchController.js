@@ -532,7 +532,7 @@ const getMyBranchesConsolidated = async (req, res) => {
 //view spcified modules by branch or hq
 
 const getActiveChurchContext = (req, res) => {
-  const { _id, name, type, parentChurch, canEdit, visibleModules, titheRecordingMode, currency } = req.activeChurch;
+  const { _id, name, type, parentChurch, canEdit, titheRecordingMode, currency } = req.activeChurch;
 
   res.status(200).json({
     message: "Church context fetched",
@@ -542,7 +542,6 @@ const getActiveChurchContext = (req, res) => {
       type,
       parentChurch: parentChurch || null,
       canEdit,
-      visibleModules,
       titheRecordingMode,
       currency
     }
