@@ -12,7 +12,7 @@ import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
 import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
 import CareCase from "../models/memberCareModel/careCaseModel.js";
 import CareVisit from "../models/memberCareModel/careVisitModel.js";
-import PrayerRequest from "../models/memberCareModel/prayerRequestModel.js";
+import PastoralAppointment from "../models/memberCareModel/pastoralAppointmentModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -38,7 +38,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
     members, attendance, visitors, programs,
     groups, departments, ministries, cells,
     outreachEvents, outreachProspects, outreachFollowUps, outreachTeams,
-    careCases, careVisits, prayerRequests,
+    careCases, careVisits, pastoralAppointments,
     announcements, tithes, budgeting,
     projects, specialFunds, offerings,
     welfare, pledges, businessVentures,
@@ -58,7 +58,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
     hasData(OutreachTeam, churchId),
     hasData(CareCase, churchId),
     hasData(CareVisit, churchId),
-    hasData(PrayerRequest, churchId),
+    hasData(PastoralAppointment, churchId),
     hasData(Announcement, churchId),
     hasData(TitheIndividual, churchId),
     hasData(Budget, churchId),
@@ -78,7 +78,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
   if (programs) used.push("ProgramsEvents");
   if (groups || departments || ministries || cells) used.push("Organisations");
   if (outreachEvents || outreachProspects || outreachFollowUps || outreachTeams) used.push("Outreach");
-  if (careCases || careVisits || prayerRequests) used.push("MemberCare");
+  if (careCases || careVisits || pastoralAppointments) used.push("MemberCare");
   if (announcements) used.push("Announcements");
   if (tithes) used.push("Tithe");
   if (budgeting) used.push("Budgeting");

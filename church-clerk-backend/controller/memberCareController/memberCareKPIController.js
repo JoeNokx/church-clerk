@@ -1,6 +1,6 @@
 import CareCase from "../../models/memberCareModel/careCaseModel.js";
 import CareVisit from "../../models/memberCareModel/careVisitModel.js";
-import PrayerRequest from "../../models/memberCareModel/prayerRequestModel.js";
+import PastoralAppointment from "../../models/memberCareModel/pastoralAppointmentModel.js";
 import { canSeeConfidential, confidentialCaseIds } from "./memberCareAccess.js";
 
 const ACTIVE_STATUSES = ["open", "in-progress"];
@@ -23,14 +23,17 @@ export const getMemberCareKPI = async (req, res) => {
 
     const caseScope = { church: churchId };
     const visitScope = { church: churchId };
-    const prayerScope = { church: churchId };
+    const apptScope = { church: churchId };
 
     if (!canSeeConfidential(req)) {
       caseScope.confidential = { $ne: true };
-      prayerScope.isPrivate = { $ne: true };
+      apptScope.confidential = { $ne: true };
       const hidden = await confidentialCaseIds(churchId);
       if (hidden.length) visitScope.careCase = { $nin: hidden };
     }
+
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
     const [
       openCases,
@@ -38,20 +41,20 @@ export const getMemberCareKPI = async (req, res) => {
       overdueFollowUps,
       visitsThisMonth,
       visitsLastMonth,
-      activePrayerRequests,
-      answeredThisMonth,
-      answeredLastMonth,
-      casesOpenedThisMonth
+      casesOpenedThisMonth,
+      upcomingAppointments,
+      appointmentsToday,
+      closedCases
     ] = await Promise.all([
       CareCase.countDocuments({ ...caseScope, status: "open" }),
       CareCase.countDocuments({ ...caseScope, status: "in-progress" }),
       CareCase.countDocuments({ ...caseScope, status: { $in: ACTIVE_STATUSES }, nextFollowUpDate: { $lt: todayStart } }),
       CareVisit.countDocuments({ ...visitScope, visitDate: { $gte: startOfMonth } }),
       CareVisit.countDocuments({ ...visitScope, visitDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
-      PrayerRequest.countDocuments({ ...prayerScope, status: "active" }),
-      PrayerRequest.countDocuments({ ...prayerScope, answeredDate: { $gte: startOfMonth } }),
-      PrayerRequest.countDocuments({ ...prayerScope, answeredDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
-      CareCase.countDocuments({ ...caseScope, dateOpened: { $gte: startOfMonth } })
+      CareCase.countDocuments({ ...caseScope, dateOpened: { $gte: startOfMonth } }),
+      PastoralAppointment.countDocuments({ ...apptScope, status: { $in: ["scheduled", "confirmed", "rescheduled"] }, appointmentDate: { $gte: todayStart } }),
+      PastoralAppointment.countDocuments({ ...apptScope, status: { $in: ["scheduled", "confirmed", "rescheduled"] }, appointmentDate: { $gte: todayStart, $lt: tomorrowStart } }),
+      CareCase.countDocuments({ ...caseScope, status: { $in: ["resolved", "closed"] } })
     ]);
 
     return res.status(200).json({
@@ -61,16 +64,15 @@ export const getMemberCareKPI = async (req, res) => {
         inProgress,
         overdueFollowUps,
         visitsThisMonth,
-        activePrayerRequests,
-        answeredThisMonth,
         casesOpenedThisMonth,
+        upcomingAppointments,
+        appointmentsToday,
+        closedCases,
         change: {
-          visitsThisMonth: pctChange(visitsThisMonth, visitsLastMonth),
-          answeredThisMonth: pctChange(answeredThisMonth, answeredLastMonth)
+          visitsThisMonth: pctChange(visitsThisMonth, visitsLastMonth)
         },
         diff: {
-          visitsThisMonth: visitsThisMonth - visitsLastMonth,
-          answeredThisMonth: answeredThisMonth - answeredLastMonth
+          visitsThisMonth: visitsThisMonth - visitsLastMonth
         }
       }
     });

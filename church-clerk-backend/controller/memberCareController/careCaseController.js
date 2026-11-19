@@ -1,4 +1,5 @@
 import CareCase from "../../models/memberCareModel/careCaseModel.js";
+import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
 import Member from "../../models/memberModel.js";
 import { annotateDeletable } from "../../services/recordDependencyService.js";
 import { canSeeConfidential } from "./memberCareAccess.js";
@@ -14,7 +15,9 @@ const CASE_ALLOWED = [
   "assignedTo",
   "dateOpened",
   "nextFollowUpDate",
-  "resolutionNotes"
+  "resolutionNotes",
+  "addToFollowUp",
+  "scheduledDate"
 ];
 
 const setAllowed = (src, target) => {
@@ -46,6 +49,36 @@ const pagination = (total, pageNum, limitNum) => {
     prevPage: pageNum > 1 ? pageNum - 1 : null,
     nextPage: pageNum < totalPages ? pageNum + 1 : null
   };
+};
+
+// A case flagged for follow-up surfaces in the shared follow-up list as a
+// "care-case" record. Upsert — never duplicate — while the flag is on.
+const syncCaseFollowUp = async (careCase, userId) => {
+  if (!careCase?.addToFollowUp || !careCase?.member) return;
+  const fields = {
+    member: careCase.member,
+    type: "care-case",
+    scheduledDate: careCase.scheduledDate || careCase.nextFollowUpDate || new Date(),
+    nextFollowUpDate: careCase.nextFollowUpDate || null,
+    assignedTo: careCase.assignedTo || [],
+    notes: careCase.title ? `Care case: ${careCase.title}` : "Care case follow-up"
+  };
+  const existing = await OutreachFollowUp.findOne({
+    church: careCase.church,
+    careCase: careCase._id,
+    status: "pending"
+  });
+  if (existing) {
+    Object.assign(existing, fields);
+    await existing.save();
+  } else {
+    await OutreachFollowUp.create({
+      church: careCase.church,
+      careCase: careCase._id,
+      createdBy: userId,
+      ...fields
+    });
+  }
 };
 
 export const searchMembersForCare = async (req, res) => {
@@ -159,6 +192,7 @@ export const createCareCase = async (req, res) => {
     setAllowed(req.body, payload);
 
     const careCase = await CareCase.create(payload);
+    await syncCaseFollowUp(careCase, req.user._id);
     const populated = await populateCase(CareCase.findById(careCase._id).lean());
     return res.status(201).json({ message: "Care case created successfully", careCase: populated });
   } catch (error) {
@@ -183,6 +217,7 @@ export const updateCareCase = async (req, res) => {
     const careCase = await CareCase.findOneAndUpdate(query, { $set: update }, { new: true, runValidators: true });
     if (!careCase) return res.status(404).json({ message: "Care case not found" });
 
+    await syncCaseFollowUp(careCase, req.user._id);
     const populated = await populateCase(CareCase.findById(careCase._id).lean());
     return res.status(200).json({ message: "Care case updated successfully", careCase: populated });
   } catch (error) {
@@ -197,6 +232,10 @@ export const deleteCareCase = async (req, res) => {
 
     const careCase = await CareCase.findOneAndDelete(query);
     if (!careCase) return res.status(404).json({ message: "Care case not found" });
+
+    // A case-generated follow-up that hasn't been worked yet dies with the
+    // case; in-flight/completed follow-ups are kept for history.
+    await OutreachFollowUp.deleteMany({ church: req.activeChurch._id, careCase: careCase._id, status: "pending" });
 
     return res.status(200).json({ message: "Care case deleted successfully" });
   } catch (error) {

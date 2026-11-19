@@ -10,7 +10,7 @@ import { assigneeNames, assigneeChips } from "../../../shared/utils/followUps.js
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
-import { FollowUpDetailsModal } from "../../outreach/components/tabs/FollowUpsTab.jsx";
+import { FollowUpDetailsModal } from "../../memberCare/components/FollowUpsTab.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";

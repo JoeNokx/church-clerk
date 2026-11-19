@@ -1,98 +1,98 @@
+const isReadAction = (a) => {
+  const k = String(a || "")
+    .trim()
+    .toLowerCase();
+  return k === "read" || k === "view";
+};
+
+const normalize = (v) => String(v || "").trim();
+
+const planFeatureForModule = (moduleName) => {
+  const m = normalize(moduleName);
+
+  // 1:1 mappings
+  if (
+    m === "dashboard" ||
+    m === "members" ||
+    m === "attendance" ||
+    m === "announcements" ||
+    m === "budgeting" ||
+    m === "churchProjects" ||
+    m === "specialFunds" ||
+    m === "offerings" ||
+    m === "welfare" ||
+    m === "pledges" ||
+    m === "businessVentures" ||
+    m === "expenses" ||
+    m === "financialStatement" ||
+    m === "reportsAnalytics" ||
+    m === "billing" ||
+    m === "referrals" ||
+    m === "settings" ||
+    m === "supportHelp" ||
+    m === "outreach" ||
+    m === "memberCare"
+  ) {
+    return m;
+  }
+
+  // Aliases / legacy
+  if (m === "organisation") return "organisations";
+  if (m === "programs" || m === "events") return "programsEvents";
+  if (m === "tithe") return "tithes";
+  if (m === "branches") return "branchesOverview";
+  if (m === "support") return "supportHelp";
+
+  // Gate all settings submodules by the main plan 'settings' feature
+  if (m.startsWith("settings")) return "settings";
+  if (m === "visitors") return null;
+
+  return null;
+};
+
+const isPlanAllowed = (req, moduleName) => {
+  const plan = req?.plan;
+  if (!plan) return true;
+
+  const subscription = req?.subscription;
+  // Expiry-aware: a trial only bypasses plan checks while still within its
+  // window. Expired trials get no grace period (grace is for paid plans).
+  const isTrial =
+    (subscription?.status === "free trial" || subscription?.status === "trialing") &&
+    (!subscription?.trialEnd || new Date() <= new Date(subscription.trialEnd));
+  if (isTrial) return true;
+
+  const featureKey = planFeatureForModule(moduleName);
+  if (!featureKey) return true;
+
+  const features = plan?.features || {};
+
+  if (featureKey === "budgeting") {
+    if (features?.budgeting !== undefined) return Boolean(features.budgeting);
+    return Boolean(features?.financeModule);
+  }
+
+  if (featureKey === "organisations") {
+    if (features?.organisations !== undefined) return Boolean(features.organisations);
+    return Boolean(features?.ministries);
+  }
+
+  if (featureKey === "dashboard") return features?.dashboard !== false;
+  // Legacy plans lack the outreach flag — default to allowed so existing
+  // plans are unaffected; only an explicit false gates the module.
+  if (featureKey === "outreach") return features?.outreach !== false;
+  // Same legacy rule as outreach — plans created before Member Care
+  // existed have no flag; only an explicit false gates the module.
+  if (featureKey === "memberCare") return features?.memberCare !== false;
+  if (featureKey === "announcements") return Boolean(features?.announcements || features?.announcement);
+  if (featureKey === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
+
+  return Boolean(features?.[featureKey]);
+};
+
 export const requirePermission = (moduleKey, actionKey) => {
   const mod = String(moduleKey || "").trim();
   const action = String(actionKey || "").trim();
-
-  const isReadAction = (a) => {
-    const k = String(a || "")
-      .trim()
-      .toLowerCase();
-    return k === "read" || k === "view";
-  };
-
-  const normalize = (v) => String(v || "").trim();
-
-  const planFeatureForModule = (moduleName) => {
-    const m = normalize(moduleName);
-
-    // 1:1 mappings
-    if (
-      m === "dashboard" ||
-      m === "members" ||
-      m === "attendance" ||
-      m === "announcements" ||
-      m === "budgeting" ||
-      m === "churchProjects" ||
-      m === "specialFunds" ||
-      m === "offerings" ||
-      m === "welfare" ||
-      m === "pledges" ||
-      m === "businessVentures" ||
-      m === "expenses" ||
-      m === "financialStatement" ||
-      m === "reportsAnalytics" ||
-      m === "billing" ||
-      m === "referrals" ||
-      m === "settings" ||
-      m === "supportHelp" ||
-      m === "outreach" ||
-      m === "memberCare"
-    ) {
-      return m;
-    }
-
-    // Aliases / legacy
-    if (m === "organisation") return "organisations";
-    if (m === "programs" || m === "events") return "programsEvents";
-    if (m === "tithe") return "tithes";
-    if (m === "branches") return "branchesOverview";
-    if (m === "support") return "supportHelp";
-
-    // Gate all settings submodules by the main plan 'settings' feature
-    if (m.startsWith("settings")) return "settings";
-    if (m === "visitors") return null;
-
-    return null;
-  };
-
-  const isPlanAllowed = (req, moduleName) => {
-    const plan = req?.plan;
-    if (!plan) return true;
-
-    const subscription = req?.subscription;
-    // Expiry-aware: a trial only bypasses plan checks while still within its
-    // window. Expired trials get no grace period (grace is for paid plans).
-    const isTrial =
-      (subscription?.status === "free trial" || subscription?.status === "trialing") &&
-      (!subscription?.trialEnd || new Date() <= new Date(subscription.trialEnd));
-    if (isTrial) return true;
-
-    const featureKey = planFeatureForModule(moduleName);
-    if (!featureKey) return true;
-
-    const features = plan?.features || {};
-
-    if (featureKey === "budgeting") {
-      if (features?.budgeting !== undefined) return Boolean(features.budgeting);
-      return Boolean(features?.financeModule);
-    }
-
-    if (featureKey === "organisations") {
-      if (features?.organisations !== undefined) return Boolean(features.organisations);
-      return Boolean(features?.ministries);
-    }
-
-    if (featureKey === "dashboard") return features?.dashboard !== false;
-    // Legacy plans lack the outreach flag — default to allowed so existing
-    // plans are unaffected; only an explicit false gates the module.
-    if (featureKey === "outreach") return features?.outreach !== false;
-    // Same legacy rule as outreach — plans created before Member Care
-    // existed have no flag; only an explicit false gates the module.
-    if (featureKey === "memberCare") return features?.memberCare !== false;
-    if (featureKey === "announcements") return Boolean(features?.announcements || features?.announcement);
-    if (featureKey === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
-
-    return Boolean(features?.[featureKey]);
-  };
 
   return (req, res, next) => {
     const perms = req.permissions || {};
@@ -116,5 +116,31 @@ export const requirePermission = (moduleKey, actionKey) => {
     }
 
     return next();
+  };
+};
+
+// Allows a route when ANY of the given [module, action] grants is satisfied —
+// e.g. follow-ups are managed under Followup & Care but are also embedded in
+// Outreach pages, so either module's matching action is accepted.
+export const requireAnyPermission = (pairs = []) => {
+  const normalized = (Array.isArray(pairs) ? pairs : [])
+    .map((pair) => [String(pair?.[0] || "").trim(), String(pair?.[1] || "").trim()])
+    .filter(([m, a]) => m && a);
+
+  return (req, res, next) => {
+    const perms = req.permissions || {};
+
+    if (perms?.super) return next();
+
+    if (!normalized.length) {
+      return res.status(500).json({ message: "Permission middleware misconfigured" });
+    }
+
+    for (const [mod, action] of normalized) {
+      if (!isPlanAllowed(req, mod) && !isReadAction(action)) continue;
+      if (perms?.[mod]?.[action]) return next();
+    }
+
+    return res.status(403).json({ message: "You do not have permission to perform this action" });
   };
 };

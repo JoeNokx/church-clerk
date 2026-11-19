@@ -2187,7 +2187,7 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
   };
 }
 
-// ---------- Outreach & Follow-Up ----------
+// ---------- Outreach ----------
 async function buildOutreachReport({ churchId, from, to, options, rangeMatch }) {
   const OutreachEvent = (await import("../models/outreachModel/outreachEventModel.js")).default;
   const OutreachProspect = (await import("../models/outreachModel/outreachProspectModel.js")).default;
@@ -3143,7 +3143,7 @@ const REPORT_MODULE_LABELS = {
   "programs": "Programs",
   "programs-events": "Programs",
   organisations: "Organisations",
-  "outreach-followup": "Outreach & Follow-Up",
+  "outreach-followup": "Outreach",
   announcements: "Announcements",
   billing: "Billing",
   audit: "Audit"

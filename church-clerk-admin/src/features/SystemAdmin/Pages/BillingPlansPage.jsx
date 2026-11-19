@@ -31,8 +31,8 @@ const FEATURE_GROUPS = [
       { key: "attendance", label: "Attendance" },
       { key: "programsEvents", label: "Programs" },
       { key: "organisations", label: "Organisations" },
-      { key: "outreach", label: "Outreach & Follow-up" },
-      { key: "memberCare", label: "Member Care" },
+      { key: "outreach", label: "Outreach" },
+      { key: "memberCare", label: "Followup & Care" },
       { key: "announcements", label: "Announcements" }
     ]
   },

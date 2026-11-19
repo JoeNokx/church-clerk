@@ -2,12 +2,10 @@ import { useContext, useState, lazy, Suspense, useEffect, useMemo } from "react"
 import { useLocation } from "react-router-dom";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
-import { getFollowUpsStats } from "../services/outreach.api.js";
 
 const OverviewTab = lazy(() => import("../components/tabs/OverviewTab.jsx"));
 const OutreachesTab = lazy(() => import("../components/tabs/OutreachesTab.jsx"));
 const PeopleReachedTab = lazy(() => import("../components/tabs/PeopleReachedTab.jsx"));
-const FollowUpsTab = lazy(() => import("../components/tabs/FollowUpsTab.jsx"));
 const TeamsTab = lazy(() => import("../components/tabs/TeamsTab.jsx"));
 
 function TabSkeleton() {
@@ -21,12 +19,11 @@ function TabSkeleton() {
   );
 }
 
-function buildTabs(overdueCount) {
+function buildTabs() {
   return [
     { key: "overview", label: "Overview" },
     { key: "outreaches", label: "Outreaches" },
     { key: "people", label: "People Reached" },
-    { key: "followups", label: "Follow-Ups", badge: overdueCount > 0 ? overdueCount : null, badgeColor: "bg-red-500 text-white" },
     { key: "teams", label: "Teams" },
   ];
 }
@@ -37,27 +34,20 @@ export default function OutreachPage() {
   const location = useLocation();
   const [tab, setTab] = useState(() => {
     const defaultTab = new URLSearchParams(location.search).get("defaultTab");
-    const validTabs = ["overview", "outreaches", "people", "followups", "teams"];
+    const validTabs = ["overview", "outreaches", "people", "teams"];
     return validTabs.includes(defaultTab) ? defaultTab : "overview";
   });
-  const [overdueCount, setOverdueCount] = useState(0);
   const [headerAction, setHeaderAction] = useState(null);
   const focusTeamId = useMemo(() => new URLSearchParams(location.search).get("teamId") || null, [location.search]);
 
   // Sync tab when URL defaultTab changes (e.g. navigating back from a details page)
   useEffect(() => {
     const defaultTab = new URLSearchParams(location.search).get("defaultTab");
-    const validTabs = ["overview", "outreaches", "people", "followups", "teams"];
+    const validTabs = ["overview", "outreaches", "people", "teams"];
     if (validTabs.includes(defaultTab) && defaultTab !== tab) {
       setTab(defaultTab);
     }
   }, [location.search]);
-
-  useEffect(() => {
-    getFollowUpsStats()
-      .then((r) => setOverdueCount(r?.data?.data?.overdue || 0))
-      .catch(() => {});
-  }, []);
 
   if (!canRead) {
     return (
@@ -73,21 +63,20 @@ export default function OutreachPage() {
     tab === "overview" ? OverviewTab :
     tab === "outreaches" ? OutreachesTab :
     tab === "people" ? PeopleReachedTab :
-    tab === "followups" ? FollowUpsTab :
     TeamsTab;
 
   return (
     <div className="max-w-7xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-bold text-gray-900 text-xl md:text-3xl">Outreach and Follow-up</h1>
-          <p className="mt-1 text-gray-500 text-sm hidden md:block">Plan outreaches, record people reached, and track follow-ups</p>
+          <h1 className="font-bold text-gray-900 text-xl md:text-3xl">Outreach</h1>
+          <p className="mt-1 text-gray-500 text-sm hidden md:block">Plan outreaches, record people reached, and organize teams</p>
         </div>
         {headerAction}
       </div>
 
       <PageTabs
-        tabs={buildTabs(overdueCount)}
+        tabs={buildTabs()}
         activeTab={tab}
         onChange={setTab}
         sticky={false}

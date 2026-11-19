@@ -13,6 +13,10 @@ const outreachFollowUpSchema = new mongoose.Schema(
     member: { type: mongoose.Schema.Types.ObjectId, ref: "Member", default: null },
     outreachEvent: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachEvent", default: null },
 
+    // Link back to the care case that generated this follow-up (when the
+    // follow-up was created from a case's "add to follow-up" flag).
+    careCase: { type: mongoose.Schema.Types.ObjectId, ref: "CareCase", default: null },
+
     // ── Scheduling ──────────────────────────────────────────────────
     scheduledDate: { type: Date },
     followUpDate: { type: Date },
@@ -24,7 +28,7 @@ const outreachFollowUpSchema = new mongoose.Schema(
     // ── Method & status ─────────────────────────────────────────────
     type: {
       type: String,
-      enum: ["call", "whatsapp", "sms", "visit", "email", "in-person", "church-visit", "personal-meeting"],
+      enum: ["call", "whatsapp", "sms", "visit", "email", "in-person", "church-visit", "personal-meeting", "care-case"],
       default: "call",
     },
     status: {
@@ -60,6 +64,7 @@ outreachFollowUpSchema.index({ church: 1, outreachEvent: 1 });
 outreachFollowUpSchema.index({ church: 1, prospect: 1 });
 outreachFollowUpSchema.index({ church: 1, visitor: 1 });
 outreachFollowUpSchema.index({ church: 1, member: 1 });
+outreachFollowUpSchema.index({ church: 1, careCase: 1 });
 outreachFollowUpSchema.index({ church: 1, status: 1 });
 outreachFollowUpSchema.index({ church: 1, scheduledDate: 1, status: 1 });
 outreachFollowUpSchema.index({ church: 1, nextFollowUpDate: 1, status: 1 });

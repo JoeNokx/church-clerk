@@ -92,7 +92,10 @@ function AbsenteesTab({
   const [successMsg, setSuccessMsg] = useState("");
 
   const canViewMember = useMemo(() => (typeof can === "function" ? can("members", "read") : false), [can]);
-  const canCreateFollowUp = useMemo(() => (typeof can === "function" ? can("outreach", "create") : false), [can]);
+  const canCreateFollowUp = useMemo(
+    () => (typeof can === "function" ? (can("outreach", "create") || can("memberCare", "create")) : false),
+    [can]
+  );
 
   const viewMember = (m) => {
     if (!m?._id) return;
@@ -100,7 +103,7 @@ function AbsenteesTab({
   };
 
   const handleFollowUpSaved = () => {
-    setSuccessMsg("Follow-up scheduled — find it under Outreach → Follow-Ups.");
+    setSuccessMsg("Follow-up scheduled — find it under Followup & Care → Followup.");
     setTimeout(() => setSuccessMsg(""), 5000);
   };
 
@@ -184,7 +187,7 @@ function AbsenteesTab({
           <span>{successMsg}</span>
           <button
             type="button"
-            onClick={() => toPage("outreach", { defaultTab: "followups" })}
+            onClick={() => toPage("member-care", { defaultTab: "followup" })}
             className="font-semibold text-green-800 underline underline-offset-2 hover:text-green-900"
           >
             Open Follow-Ups

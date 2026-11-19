@@ -51,6 +51,11 @@ const careCaseSchema = new mongoose.Schema(
     nextFollowUpDate: { type: Date },
     resolutionNotes: { type: String, trim: true },
 
+    // When enabled, the case surfaces in the shared follow-up list as a
+    // "care-case" follow-up (scheduledDate is the follow-up's due date).
+    addToFollowUp: { type: Boolean, default: false },
+    scheduledDate: { type: Date },
+
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     referenceId: { type: String, unique: true, sparse: true, index: true }
   },

@@ -43,7 +43,7 @@ import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
 import OutreachSupport from "../models/outreachModel/outreachSupportModel.js";
 import CareCase from "../models/memberCareModel/careCaseModel.js";
 import CareVisit from "../models/memberCareModel/careVisitModel.js";
-import PrayerRequest from "../models/memberCareModel/prayerRequestModel.js";
+import PastoralAppointment from "../models/memberCareModel/pastoralAppointmentModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
 import AnnouncementMessage from "../models/announcementMessageModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
@@ -103,7 +103,8 @@ const ENTITY = {
       { model: CareCase, field: "assignedTo", label: "care case assignments" },
       { model: CareVisit, field: "member", label: "care visits" },
       { model: CareVisit, field: "conductedBy", label: "care visits" },
-      { model: PrayerRequest, field: "member", label: "prayer requests" },
+      { model: PastoralAppointment, field: "member", label: "pastoral appointments" },
+      { model: PastoralAppointment, field: "assignedTo", label: "pastoral appointment assignments" },
       { model: AnnouncementMessageDelivery, field: "member", label: "announcement deliveries" },
     ],
   },
@@ -224,6 +225,7 @@ const ENTITY = {
     self: () => [],
     links: [
       { model: CareVisit, field: "careCase", label: "care visits" },
+      { model: PastoralAppointment, field: "linkedCase", label: "pastoral appointments" },
     ],
   },
 

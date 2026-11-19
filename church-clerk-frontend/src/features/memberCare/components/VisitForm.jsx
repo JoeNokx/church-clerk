@@ -2,8 +2,8 @@ import { useContext, useEffect, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberCareContext from "../memberCare.store.js";
-import { MemberMultiSelect } from "./MemberSelect.jsx";
-import { getCareCases } from "../services/memberCare.api.js";
+import { MemberSelect, MemberMultiSelect } from "./MemberSelect.jsx";
+import { getCareCases, createVisit } from "../services/memberCare.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
 import { VISIT_TYPES, VISIT_OUTCOMES, memberName } from "../constants.js";
 import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
@@ -13,10 +13,12 @@ const inputClass =
 const labelClass = "block font-semibold text-gray-500 text-xs";
 
 /**
- * Log a care visit against a case. `careCase` is the parent case (its id
- * scopes the create endpoint); edit mode receives the visit row instead.
+ * Log a care visit. `careCase` fixes the parent case (its id scopes the
+ * legacy create endpoint); without one the visit is standalone — member is
+ * required, case optional. `defaultMember` pre-selects a member (e.g. from
+ * a follow-up). Edit mode receives the visit row instead.
  */
-function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
+function VisitForm({ open, mode, careCase, initialData, defaultMember, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const { showLockModal } = useSubscriptionLock();
   const store = useContext(MemberCareContext);
@@ -33,39 +35,53 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // When no case is passed in (create from the Visits tab), the user picks
-  // one from the open/in-progress list.
+  // Standalone logging (Visits tab / follow-up action) — member is required,
+  // a care case is optional and filtered to the chosen member.
+  const [member, setMember] = useState(null);
   const [caseOptions, setCaseOptions] = useState([]);
   const [selectedCaseId, setSelectedCaseId] = useState("");
 
-  const needsCasePicker = mode !== "edit" && !careCase?._id;
+  const standalone = mode !== "edit" && !careCase?._id;
+  const memberCases = useMemo(
+    () =>
+      caseOptions.filter(
+        (c) => !member?._id || String(c?.member?._id || c?.member) === String(member._id)
+      ),
+    [caseOptions, member]
+  );
 
-  useEffect(() => {
-    if (!open) return;
-    setFormError(null);
-    setIsSubmitting(false);
+  // Reset the form when the modal opens or the editing target/default
+  // member changes — adjusted during render rather than in an effect.
+  const resetKey = open ? `${mode}:${initialData?._id || "new"}:${defaultMember?._id || ""}` : "closed";
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
+    if (open) {
+      setFormError(null);
+      setIsSubmitting(false);
 
-    if (mode === "edit" && initialData) {
-      setVisitType(String(initialData.visitType || "home-visit"));
-      setVisitDate(initialData.visitDate ? String(initialData.visitDate).slice(0, 10) : "");
-      setConductedBy(Array.isArray(initialData.conductedBy) ? initialData.conductedBy : []);
-      setNotes(String(initialData.notes || ""));
-      setOutcome(String(initialData.outcome || "stable"));
-      setNextFollowUpDate(initialData.nextFollowUpDate ? String(initialData.nextFollowUpDate).slice(0, 10) : "");
-      return;
+      if (mode === "edit" && initialData) {
+        setVisitType(String(initialData.visitType || "home-visit"));
+        setVisitDate(initialData.visitDate ? String(initialData.visitDate).slice(0, 10) : "");
+        setConductedBy(Array.isArray(initialData.conductedBy) ? initialData.conductedBy : []);
+        setNotes(String(initialData.notes || ""));
+        setOutcome(String(initialData.outcome || "stable"));
+        setNextFollowUpDate(initialData.nextFollowUpDate ? String(initialData.nextFollowUpDate).slice(0, 10) : "");
+      } else {
+        setVisitType("home-visit");
+        setVisitDate(new Date().toISOString().slice(0, 10));
+        setConductedBy([]);
+        setNotes("");
+        setOutcome("stable");
+        setNextFollowUpDate("");
+        setSelectedCaseId("");
+        setMember(defaultMember || null);
+      }
     }
-
-    setVisitType("home-visit");
-    setVisitDate(new Date().toISOString().slice(0, 10));
-    setConductedBy([]);
-    setNotes("");
-    setOutcome("stable");
-    setNextFollowUpDate("");
-    setSelectedCaseId("");
-  }, [open, mode, initialData]);
+  }
 
   useEffect(() => {
-    if (!open || !needsCasePicker) return;
+    if (!open || !standalone) return;
     let cancelled = false;
     const run = async () => {
       try {
@@ -79,7 +95,7 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
     };
     run();
     return () => { cancelled = true; };
-  }, [open, needsCasePicker]);
+  }, [open, standalone]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -89,8 +105,8 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
       setFormError("Visit date is required.");
       return;
     }
-    if (needsCasePicker && !selectedCaseId) {
-      setFormError("Please select a care case.");
+    if (standalone && !member?._id) {
+      setFormError("Please select a member.");
       return;
     }
 
@@ -112,7 +128,15 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
         await store?.updateVisit?.(initialData?._id, payload);
       } else {
         if (!canCreate) { showLockModal("You don't have permission to perform this action.", { payButton: false, title: "No Permission" }); return; }
-        await store?.createVisit?.(careCase?._id || selectedCaseId, payload);
+        if (careCase?._id) {
+          await store?.createVisit?.(careCase._id, payload);
+        } else {
+          await createVisit({
+            memberId: member._id,
+            careCaseId: selectedCaseId || undefined,
+            ...payload
+          });
+        }
       }
       onSuccess?.();
     } catch (e2) {
@@ -153,21 +177,45 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
           )}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
-            {needsCasePicker ? (
-              <div className="md:col-span-2">
-                <label className={labelClass}>Care Case</label>
-                <select value={selectedCaseId} onChange={(e) => setSelectedCaseId(e.target.value)} className={inputClass}>
-                  <option value="">Select a case...</option>
-                  {caseOptions.map((c) => (
-                    <option key={c?._id} value={c?._id}>
-                      {`${c?.title || "Untitled"} — ${memberName(c?.member)}`}
-                    </option>
-                  ))}
-                </select>
-                {!caseOptions.length ? (
-                  <div className="mt-1.5 text-xs text-gray-400">No open cases — create a care case first.</div>
-                ) : null}
-              </div>
+            {standalone ? (
+              <>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Member</label>
+                  <div className="mt-2">
+                    <MemberSelect
+                      value={member}
+                      onSelect={(m) => { setMember(m); setSelectedCaseId(""); }}
+                      onClear={() => { setMember(null); setSelectedCaseId(""); }}
+                      placeholder="Search member who was visited..."
+                    />
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Link to Care Case (optional)</label>
+                  <select
+                    value={selectedCaseId}
+                    onChange={(e) => {
+                      const cid = e.target.value;
+                      setSelectedCaseId(cid);
+                      if (cid && !member?._id) {
+                        const c = caseOptions.find((x) => String(x?._id) === String(cid));
+                        if (c?.member) setMember(c.member);
+                      }
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="">None — casual visit</option>
+                    {memberCases.map((c) => (
+                      <option key={c?._id} value={c?._id}>
+                        {`${c?.title || "Untitled"} — ${memberName(c?.member)}`}
+                      </option>
+                    ))}
+                  </select>
+                  {member?._id && !memberCases.length ? (
+                    <div className="mt-1.5 text-xs text-gray-400">No open cases for this member.</div>
+                  ) : null}
+                </div>
+              </>
             ) : null}
 
             <div>

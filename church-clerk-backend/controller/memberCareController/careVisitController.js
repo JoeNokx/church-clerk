@@ -149,6 +149,45 @@ export const createCareVisit = async (req, res) => {
   }
 };
 
+// Casual visits — logged against a member directly; a case is optional.
+export const createCasualCareVisit = async (req, res) => {
+  try {
+    const churchId = req.activeChurch._id;
+    const memberId = req.body.memberId || req.body.member;
+    const member = await Member.findOne({ _id: memberId, church: churchId }).select("_id");
+    if (!member) return res.status(404).json({ message: "Member not found" });
+    if (!req.body.visitDate) return res.status(400).json({ message: "visitDate is required" });
+
+    let careCase = null;
+    const caseId = req.body.careCaseId || req.body.careCase;
+    if (caseId) {
+      careCase = await findVisibleCase(req, caseId);
+      if (!careCase) return res.status(404).json({ message: "Care case not found" });
+    }
+
+    const payload = {
+      church: churchId,
+      careCase: careCase?._id || null,
+      member: member._id,
+      createdBy: req.user._id
+    };
+    setAllowed(req.body, payload);
+
+    const visit = await CareVisit.create(payload);
+
+    if (careCase) {
+      if (careCase.status === "open") careCase.status = "in-progress";
+      if (payload.nextFollowUpDate) careCase.nextFollowUpDate = new Date(payload.nextFollowUpDate);
+      if (careCase.isModified()) await careCase.save();
+    }
+
+    const populated = await populateVisit(CareVisit.findById(visit._id).lean());
+    return res.status(201).json({ message: "Care visit logged successfully", careVisit: populated });
+  } catch (error) {
+    return res.status(400).json({ message: "Care visit could not be created", error: error.message });
+  }
+};
+
 export const updateCareVisit = async (req, res) => {
   try {
     const visit = await CareVisit.findOne({ _id: req.params.visitId, church: req.activeChurch._id });

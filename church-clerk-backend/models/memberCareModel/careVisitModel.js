@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 const careVisitSchema = new mongoose.Schema(
   {
     church: { type: mongoose.Schema.Types.ObjectId, ref: "Church", required: true },
-    careCase: { type: mongoose.Schema.Types.ObjectId, ref: "CareCase", required: true },
-    // Denormalized from the case so member visit history stays one query away.
+    // Optional — casual visits (no formal case) are logged without one.
+    careCase: { type: mongoose.Schema.Types.ObjectId, ref: "CareCase", default: null },
     member: { type: mongoose.Schema.Types.ObjectId, ref: "Member", required: true },
 
     visitType: {

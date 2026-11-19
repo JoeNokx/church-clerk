@@ -42,6 +42,13 @@ const normalizeRoleKeyInput = (v) => String(v || "")
   .replace(/\s+/g, "_")
   .replace(/[^a-z0-9_\-]/g, "");
 
+const MODULE_DISPLAY_NAMES = {
+  memberCare: "Followup & Care",
+  outreach: "Outreach"
+};
+
+const moduleDisplayName = (key) => MODULE_DISPLAY_NAMES[key] || key;
+
 function UsersRolesPage() {
   const { user: currentUser, guardPermission } = useAuth();
   // Only the super admin may create/edit/delete system-scope roles — the
@@ -1171,7 +1178,7 @@ function UsersRolesPage() {
                       const actions = Array.isArray(permissionModules[moduleKey]) ? permissionModules[moduleKey] : [];
                       return (
                         <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
-                          <div className="text-sm font-semibold text-gray-900">{moduleKey}</div>
+                          <div className="text-sm font-semibold text-gray-900">{moduleDisplayName(moduleKey)}</div>
                           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {actions.map((action) => (
                               <label key={action} className="inline-flex items-center gap-2 text-sm text-gray-700">
@@ -1279,7 +1286,7 @@ function UsersRolesPage() {
                       const resolved = buildMatrixFromRole(viewRole?.permissions);
                       return (
                         <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
-                          <div className="text-sm font-semibold text-gray-900">{moduleKey}</div>
+                          <div className="text-sm font-semibold text-gray-900">{moduleDisplayName(moduleKey)}</div>
                           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {actions.map((action) => (
                               <div key={action} className="text-sm text-gray-700">
@@ -1372,7 +1379,7 @@ function UsersRolesPage() {
                       const actions = Array.isArray(permissionModules[moduleKey]) ? permissionModules[moduleKey] : [];
                       return (
                         <div key={moduleKey} className="rounded-lg border border-gray-200 p-3">
-                          <div className="text-sm font-semibold text-gray-900">{moduleKey}</div>
+                          <div className="text-sm font-semibold text-gray-900">{moduleDisplayName(moduleKey)}</div>
                           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {actions.map((action) => (
                               <label key={action} className="inline-flex items-center gap-2 text-sm text-gray-700">

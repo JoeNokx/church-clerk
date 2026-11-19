@@ -15,8 +15,8 @@ const METHOD_LABELS = {
 
 /**
  * Schedule / edit a follow-up for a member (e.g. an absentee check-in).
- * Uses the shared outreach follow-up engine — records created here show up
- * under Outreach → Follow-Ups with the member as the subject.
+ * Uses the shared follow-up engine — records created here show up
+ * under Followup & Care → Followup with the member as the subject.
  */
 export function MemberFollowUpForm({ member, followUp = null, defaultNotes = "", onClose, onSaved }) {
   const editing = followUp || null;

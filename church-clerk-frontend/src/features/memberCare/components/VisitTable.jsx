@@ -1,6 +1,5 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 
-import PermissionContext from "../../permissions/permission.store.js";
 import MemberCareContext from "../memberCare.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
@@ -13,12 +12,9 @@ import Chip from "./Chip.jsx";
 import { formatDate, labelFor, memberName, VISIT_TYPES, VISIT_OUTCOMES } from "../constants.js";
 
 function VisitTable({ onEdit }) {
-  const { can } = useContext(PermissionContext) || {};
   const store = useContext(MemberCareContext);
   const guarded = useGuardedAction();
 
-  const canEdit = useMemo(() => (typeof can === "function" ? can("memberCare", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("memberCare", "delete") : false), [can]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -108,7 +104,7 @@ function VisitTable({ onEdit }) {
         illustration={isZero ? "memberCare" : "search"}
         title={isZero ? "No care visits yet" : "No care visits found"}
         description={isZero
-          ? "Visits are logged against care cases — open a case and log the first visit."
+          ? "Log a visit for a member — with or without a care case."
           : "We couldn't find any visits matching your current search or filters."}
         actionLabel={isZero ? null : recovery?.actionLabel}
         onAction={isZero ? null : recovery?.onAction}

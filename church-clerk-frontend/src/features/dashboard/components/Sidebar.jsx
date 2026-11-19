@@ -428,22 +428,71 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("ProgramsEvents") && canRead("programs") ? (
+                {planAllows("MemberCare") && canRead("memberCare") ? (
 
-                  <NavLink to={toPage("programs")} className={itemClass("programs")}>
+                  <NavLink to={toPage("member-care")} className={itemClass("member-care")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M7 3v3M17 3v3M4 8h16M6 12h4M6 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                        <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 8v5M9.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
 
                     </span>
 
-                    Programs
+                    Followup &amp; Care
 
-                    {isReadOnly("ProgramsEvents") ? <LockBadge /> : null}
+                    {isReadOnly("MemberCare") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
+
+
+                {planAllows("Announcements") && canRead("announcements") ? (
+
+                  <NavLink to={toPage("announcements")} className={itemClass("announcements")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+
+                        <path d="M4 4h16v12H5.5L4 17.5V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+
+                        <path d="M7 8h10M7 12h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+
+                      </svg>
+
+                    </span>
+
+                    Announcements
+
+                    {isReadOnly("Announcements") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
+
+
+                {planAllows("Outreach") && canRead("outreach") ? (
+
+                  <NavLink to={toPage("outreach")} className={itemClass("outreach")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                        <path d="M12 22s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M17 3l1.5 1.5M19.5 5.5l1.5 1.5M17 9l2-2M21 3l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+
+                    </span>
+
+                    Outreach
+
+                    {isReadOnly("Outreach") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -476,71 +525,27 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("Announcements") && canRead("announcements") ? (
+                {planAllows("ProgramsEvents") && canRead("programs") ? (
 
-                  <NavLink to={toPage("announcements")} className={itemClass("announcements")}>
+                  <NavLink to={toPage("programs")} className={itemClass("programs")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M4 4h16v12H5.5L4 17.5V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M7 8h10M7 12h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <path d="M7 3v3M17 3v3M4 8h16M6 12h4M6 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8"/>
                       </svg>
 
                     </span>
 
-                    Announcements
+                    Programs
 
-                    {isReadOnly("Announcements") ? <LockBadge /> : null}
+                    {isReadOnly("ProgramsEvents") ? <LockBadge /> : null}
 
                   </NavLink>
 
                 ) : null}
 
-                {planAllows("Outreach") && canRead("outreach") ? (
-
-                  <NavLink to={toPage("outreach")} className={itemClass("outreach")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M12 22s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                        <path d="M17 3l1.5 1.5M19.5 5.5l1.5 1.5M17 9l2-2M21 3l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-
-                    </span>
-
-                    Outreach & Follow-up
-
-                    {isReadOnly("Outreach") ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
-
-                {planAllows("MemberCare") && canRead("memberCare") ? (
-
-                  <NavLink to={toPage("member-care")} className={itemClass("member-care")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M12 8v5M9.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-
-                    </span>
-
-                    Member Care
-
-                    {isReadOnly("MemberCare") ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
 
               </div>
 
@@ -557,83 +562,6 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
               <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">FINANCE</div>
 
               <div className="mt-2 space-y-1">
-
-                {planAllows("Tithe") && canRead("tithe") ? (
-
-                  <NavLink to={toPage("tithe")} className={itemClass("tithe")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/>
-                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8"/>
-                        <path d="M6 12h.01M18 12h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                      </svg>
-
-                    </span>
-
-                    Tithe
-
-                    {isReadOnly("Tithe") ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
-
-
-
-                {planAllows("Budgeting") && canRead("budgeting") ? (
-
-                  <NavLink to={toPage("budgeting")} className={itemClass("budgeting")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M3 20h18M3 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                        <path d="M6 16h8M6 12h12M6 8h5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-
-                      </svg>
-
-                    </span>
-
-                    Budgeting
-
-                    {isReadOnly("Budgeting") ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
-
-
-
-                {((planAllows("ChurchProjects") && canRead("churchProjects")) || (planAllows("Pledges") && canRead("pledges"))) ? (
-
-                  <NavLink to={toPage("fundraising")} className={itemClass("fundraising")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M3 21h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M6 21V9l6-4 6 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M10 21v-6h4v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                      </svg>
-
-                    </span>
-
-                    Fundraising
-
-                    {((!planAllows("ChurchProjects") || !canRead("churchProjects") || isReadOnly("ChurchProjects")) && (!planAllows("Pledges") || !canRead("pledges") || isReadOnly("Pledges"))) ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
-
-
 
                 {((planAllows("Offerings") && canRead("offerings")) || (planAllows("SpecialFunds") && canRead("specialFunds"))) ? (() => {
 
@@ -671,23 +599,23 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("Welfare") && canRead("welfare") ? (
+                {planAllows("Tithe") && canRead("tithe") ? (
 
-                  <NavLink to={toPage("welfare")} className={itemClass("welfare")}>
+                  <NavLink to={toPage("tithe")} className={itemClass("tithe")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M12 21s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
+                        <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M6 12h.01M18 12h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
                       </svg>
 
                     </span>
 
-                    Welfare
+                    Tithe
 
-                    {isReadOnly("Welfare") ? <LockBadge /> : null}
+                    {isReadOnly("Tithe") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -695,23 +623,27 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("BusinessVentures") && canRead("businessVentures") ? (
+                {((planAllows("ChurchProjects") && canRead("churchProjects")) || (planAllows("Pledges") && canRead("pledges"))) ? (
 
-                  <NavLink to={toPage("business-ventures")} className={itemClass("business-ventures")}>
+                  <NavLink to={toPage("fundraising")} className={itemClass("fundraising")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
-                        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                        <path d="M2 13h20" stroke="currentColor" strokeWidth="1.8"/>
+
+                        <path d="M3 21h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+
+                        <path d="M6 21V9l6-4 6 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+
+                        <path d="M10 21v-6h4v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+
                       </svg>
 
                     </span>
 
-                    Business Ventures
+                    Fundraising
 
-                    {isReadOnly("BusinessVentures") ? <LockBadge /> : null}
+                    {((!planAllows("ChurchProjects") || !canRead("churchProjects") || isReadOnly("ChurchProjects")) && (!planAllows("Pledges") || !canRead("pledges") || isReadOnly("Pledges"))) ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -744,6 +676,30 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
+                {planAllows("Welfare") && canRead("welfare") ? (
+
+                  <NavLink to={toPage("welfare")} className={itemClass("welfare")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+
+                        <path d="M12 21s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+
+                      </svg>
+
+                    </span>
+
+                    Welfare
+
+                    {isReadOnly("Welfare") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
+
+
                 {planAllows("FinancialStatement") && canRead("financialStatement") ? (
 
                   <NavLink to={toPage("financial-statement")} className={itemClass("financial-statement")}>
@@ -766,6 +722,56 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                   </NavLink>
 
                 ) : null}
+
+
+
+                {planAllows("BusinessVentures") && canRead("businessVentures") ? (
+
+                  <NavLink to={toPage("business-ventures")} className={itemClass("business-ventures")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                        <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M2 13h20" stroke="currentColor" strokeWidth="1.8"/>
+                      </svg>
+
+                    </span>
+
+                    Business Ventures
+
+                    {isReadOnly("BusinessVentures") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
+
+
+                {planAllows("Budgeting") && canRead("budgeting") ? (
+
+                  <NavLink to={toPage("budgeting")} className={itemClass("budgeting")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+
+                        <path d="M3 20h18M3 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M6 16h8M6 12h12M6 8h5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+
+                      </svg>
+
+                    </span>
+
+                    Budgeting
+
+                    {isReadOnly("Budgeting") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
 
               </div>
 

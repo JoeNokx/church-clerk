@@ -107,7 +107,7 @@ const PROBLEMS = [
   {
     title: "Follow-up depends on memory",
     desc: "Visitors and absent members are only remembered if someone thinks of them — and many quietly slip through.",
-    icon: MODULE_ICONS["Outreach & Follow-up"],
+    icon: MODULE_ICONS["Outreach"],
     color: "#00a63e"
   }
 ];
@@ -150,9 +150,9 @@ const PLATFORM_FEATURES = [
     desc: "Giving, attendance, and branch reports — export to PDF or Excel, share securely, or print."
   },
   {
-    name: "Outreach & Follow-up",
+    name: "Outreach",
     color: "#9810fa",
-    icon: MODULE_ICONS["Outreach & Follow-up"],
+    icon: MODULE_ICONS["Outreach"],
     desc: "Track visitors and assign follow-ups so no first-timer slips through the cracks."
   },
   {
@@ -170,7 +170,7 @@ const PLATFORM_FEATURES = [
   {
     name: "Visitors",
     color: "#00bba7",
-    icon: MODULE_ICONS["Outreach & Follow-up"],
+    icon: MODULE_ICONS["Outreach"],
     desc: "Keep visitor records from first visit through follow-up to membership."
   },
   {
@@ -277,7 +277,7 @@ const ROLES = [
     desc: "Look after their people — member records, meeting attendance, and follow-ups."
   },
   {
-    icon: MODULE_ICONS["Outreach & Follow-up"],
+    icon: MODULE_ICONS["Outreach"],
     role: "Evangelism Coordinators",
     desc: "Track outreach — visitor records, converts, and follow-up after services."
   }
@@ -362,7 +362,7 @@ const STEPS = [
 
 const BENEFITS_LEFT = [
   { icon: MODULE_ICONS["Members"], title: "One record for every member", desc: "Everything your church knows about a person lives on a single profile — no duplicate lists, no outdated spreadsheets." },
-  { icon: MODULE_ICONS["Outreach & Follow-up"], title: "Follow-up that doesn't rely on memory", desc: "Visitors and absent members surface automatically, so someone always reaches out before people quietly leave." },
+  { icon: MODULE_ICONS["Outreach"], title: "Follow-up that doesn't rely on memory", desc: "Visitors and absent members surface automatically, so someone always reaches out before people quietly leave." },
   { icon: MODULE_ICONS["Financial Overview"], title: "Finances leadership can trust", desc: "Tithes, offerings, welfare, and expenses reconcile into one auditable overview — not five separate books." }
 ];
 
@@ -393,7 +393,7 @@ const FEATURE_ANCHOR = {
   "Tithes & Offerings": "tithe",
   "HQ & Branches": "hq-branches",
   "Reports": "reports",
-  "Outreach & Follow-up": "outreach-follow-up",
+  "Outreach": "outreach-follow-up",
   "Ministries & Departments": "organisations",
   "Programs": "programs",
   "Visitors": "outreach-follow-up",

@@ -50,20 +50,39 @@ export const VISIT_OUTCOMES = [
   { value: "no-contact", label: "No Contact" }
 ];
 
-export const PRAYER_CATEGORIES = [
-  { value: "health", label: "Health" },
-  { value: "family", label: "Family" },
-  { value: "finances", label: "Finances" },
-  { value: "guidance", label: "Guidance" },
-  { value: "thanksgiving", label: "Thanksgiving" },
-  { value: "bereavement", label: "Bereavement" },
+export const APPOINTMENT_TYPES = [
+  { value: "counseling-session", label: "Counseling Session" },
+  { value: "pastoral-appointment", label: "Pastoral Appointment" }
+];
+
+export const APPOINTMENT_CATEGORIES = [
+  { value: "premarital", label: "Premarital" },
+  { value: "marriage", label: "Marriage" },
+  { value: "grief", label: "Grief" },
+  { value: "spiritual-direction", label: "Spiritual Direction" },
+  { value: "crisis", label: "Crisis" },
+  { value: "dedication", label: "Dedication" },
+  { value: "baptism-prep", label: "Baptism Preparation" },
+  { value: "general", label: "General" },
   { value: "other", label: "Other" }
 ];
 
-export const PRAYER_STATUSES = [
-  { value: "active", label: "Active" },
-  { value: "answered", label: "Answered" },
-  { value: "archived", label: "Archived" }
+export const APPOINTMENT_STATUSES = [
+  { value: "scheduled", label: "Scheduled" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "no-show", label: "No Show" },
+  { value: "rescheduled", label: "Rescheduled" }
+];
+
+export const APPOINTMENT_LOCATIONS = [
+  { value: "church-office", label: "Church Office" },
+  { value: "home", label: "Home" },
+  { value: "hospital", label: "Hospital" },
+  { value: "online", label: "Online" },
+  { value: "phone", label: "Phone" },
+  { value: "other", label: "Other" }
 ];
 
 export const labelFor = (list, value) =>

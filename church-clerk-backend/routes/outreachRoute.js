@@ -7,7 +7,7 @@ import { attachBillingBanner } from "../middleware/expiryWarningMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
-import { requirePermission } from "../middleware/permissionMiddleware.js";
+import { requirePermission, requireAnyPermission } from "../middleware/permissionMiddleware.js";
 import { deletionGuard } from "../services/recordDependencyService.js";
 
 import {
@@ -57,9 +57,17 @@ const W = [...bm, authorizeRoles(...writeRoles), requirePermission("outreach", "
 const U = [...bm, authorizeRoles(...writeRoles), requirePermission("outreach", "update")];
 const D = [...bm, authorizeRoles(...deleteRoles), requirePermission("outreach", "delete")];
 
+// Follow-ups live under Followup & Care but share this engine — either
+// module's permission grants access. The event list is also needed by the
+// follow-up form's event picker.
+const FR = [...bm, authorizeRoles(...readRoles), requireAnyPermission([["outreach", "read"], ["memberCare", "read"]])];
+const FW = [...bm, authorizeRoles(...writeRoles), requireAnyPermission([["outreach", "create"], ["memberCare", "create"]])];
+const FU = [...bm, authorizeRoles(...writeRoles), requireAnyPermission([["outreach", "update"], ["memberCare", "update"]])];
+const FD = [...bm, authorizeRoles(...deleteRoles), requireAnyPermission([["outreach", "delete"], ["memberCare", "delete"]])];
+
 // ── Events ────────────────────────────────────────────────────────
 router.get("/events/kpi", ...R, getOutreachKPI);
-router.get("/events", ...R, getAllOutreachEvents);
+router.get("/events", ...FR, getAllOutreachEvents);
 router.get("/events/:id", ...R, getOutreachEventById);
 router.post("/events", ...W, createOutreachEvent);
 router.put("/events/:id", ...U, updateOutreachEvent);
@@ -83,17 +91,17 @@ router.put("/events/:eventId/prospects/:prospectId", ...U, updateProspect);
 router.delete("/events/:eventId/prospects/:prospectId", ...D, deletionGuard("outreachProspect", "prospectId"), deleteProspect);
 
 // ── Follow-ups ────────────────────────────────────────────────────
-router.get("/follow-ups/stats", ...R, getFollowUpsStats);
-router.get("/follow-ups", ...R, getAllFollowUps);
-router.get("/events/:eventId/follow-ups", ...R, getFollowUpsByEvent);
-router.get("/prospects/:prospectId/follow-ups", ...R, getFollowUpsByProspect);
-router.post("/prospects/:prospectId/follow-ups", ...W, createFollowUp);
-router.post("/follow-ups/members/:memberId", ...W, createMemberFollowUp);
+router.get("/follow-ups/stats", ...FR, getFollowUpsStats);
+router.get("/follow-ups", ...FR, getAllFollowUps);
+router.get("/events/:eventId/follow-ups", ...FR, getFollowUpsByEvent);
+router.get("/prospects/:prospectId/follow-ups", ...FR, getFollowUpsByProspect);
+router.post("/prospects/:prospectId/follow-ups", ...FW, createFollowUp);
+router.post("/follow-ups/members/:memberId", ...FW, createMemberFollowUp);
 // Same handler as the attendance route — creating a visitor follow-up from
-// the outreach tab is an outreach action, not a visitors-register action.
-router.post("/follow-ups/visitors/:visitorId", ...W, createVisitorFollowUp);
-router.put("/follow-ups/:followUpId", ...U, updateFollowUp);
-router.delete("/follow-ups/:followUpId", ...D, deletionGuard("outreachFollowUp", "followUpId"), deleteFollowUp);
+// the follow-up tab is a followup & care action, not a visitors-register action.
+router.post("/follow-ups/visitors/:visitorId", ...FW, createVisitorFollowUp);
+router.put("/follow-ups/:followUpId", ...FU, updateFollowUp);
+router.delete("/follow-ups/:followUpId", ...FD, deletionGuard("outreachFollowUp", "followUpId"), deleteFollowUp);
 
 // ── Support (nested under events) ─────────────────────────────────
 router.get("/events/:eventId/support/people/search", ...R, searchPeopleForSupport);

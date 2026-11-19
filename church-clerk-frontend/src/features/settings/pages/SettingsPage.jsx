@@ -45,9 +45,14 @@ import {
 import { getMembers } from "../../member/services/member.api.js";
 import { roleLabel, normalizeRoleKey } from "../../../config/roles.js";
 
+const MODULE_NAME_OVERRIDES = {
+  memberCare: "Followup & Care"
+};
+
 const humanizeKey = (key) => {
   const raw = String(key || "").trim();
   if (!raw) return "—";
+  if (MODULE_NAME_OVERRIDES[raw]) return MODULE_NAME_OVERRIDES[raw];
   const label = raw
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")

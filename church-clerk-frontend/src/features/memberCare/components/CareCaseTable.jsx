@@ -1,6 +1,5 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 
-import PermissionContext from "../../permissions/permission.store.js";
 import { showError } from "../../../utils/toast.js";
 import MemberCareContext from "../memberCare.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
@@ -12,12 +11,10 @@ import { useGuardedAction } from "../../../shared/context/SubscriptionLockContex
 import Chip from "./Chip.jsx";
 import { formatDate, labelFor, memberName, CASE_CATEGORIES, CASE_STATUSES } from "../constants.js";
 
-function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
-  const { can } = useContext(PermissionContext) || {};
+function CareCaseTable({ onView, onEdit, onLogVisit, onFollowUp, onCreate, onDeleted }) {
   const store = useContext(MemberCareContext);
   const guarded = useGuardedAction();
 
-  const canDelete = useMemo(() => (typeof can === "function" ? can("memberCare", "delete") : false), [can]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -167,6 +164,7 @@ function CareCaseTable({ onView, onEdit, onLogVisit, onCreate, onDeleted }) {
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => onView?.(row) },
                       { label: "Log Visit", onClick: () => guarded(() => onLogVisit?.(row), "memberCare", "update") },
+                      { label: "Follow Up", onClick: () => guarded(() => onFollowUp?.(row), "memberCare", "create") },
                       { label: "Edit", onClick: () => guarded(() => onEdit?.(row), "memberCare", "update") },
                       row?.canDelete && { label: "Delete", danger: true, onClick: () => guarded(() => setDeleteTarget(row), "memberCare", "delete") },
                     ]} />

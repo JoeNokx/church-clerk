@@ -1,7 +1,7 @@
 import CareCase from "../../models/memberCareModel/careCaseModel.js";
 
-// Confidential care cases and private prayer requests are restricted to
-// the church administrator — superadmins keep their usual bypass.
+// Confidential care cases are restricted to the church administrator —
+// superadmins keep their usual bypass.
 export const canSeeConfidential = (req) =>
   Boolean(req.permissions?.super) ||
   ["churchclerkadmin", "superadmin"].includes(String(req.user?.role || "").trim().toLowerCase());

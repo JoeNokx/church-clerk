@@ -13,6 +13,7 @@ import ChurchProject from "../models/financeModel/projectModel/churchProjectMode
 import Offering from "../models/financeModel/offeringModel.js";
 import WelfareDisbursement from "../models/financeModel/welfareModel/welfareDisbursementModel.js";
 import CareCase from "../models/memberCareModel/careCaseModel.js";
+import PastoralAppointment from "../models/memberCareModel/pastoralAppointmentModel.js";
 import Pledge from "../models/financeModel/pledgeModel/pledgeModel.js";
 import BusinessVentures from "../models/financeModel/businessModel/businessVenturesModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
@@ -430,6 +431,36 @@ export const globalSearch = async (req, res) => {
                 date: r.dateOpened || r.createdAt,
                 module: "memberCare",
               }));
+            }
+          })
+      );
+
+      // Pastoral appointments — same confidentiality rule as care cases.
+      const apptFilter = {
+        ...base,
+        $or: [{ attendeeName: regex }, { referenceId: regex }]
+      };
+      if (!canConfidential) apptFilter.confidential = { $ne: true };
+      const memberRx = await Member.find({ church: base.church, $or: [{ firstName: regex }, { lastName: regex }] }).select("_id").lean();
+      if (memberRx.length) apptFilter.$or.push({ member: { $in: memberRx.map((m) => m._id) } });
+      tasks.push(
+        PastoralAppointment.find(apptFilter)
+          .select("_id type category status appointmentDate member attendeeName referenceId createdAt")
+          .populate("member", "firstName lastName photoUrl")
+          .sort({ appointmentDate: 1 })
+          .limit(LIMIT)
+          .lean()
+          .then((rows) => {
+            if (rows.length) {
+              const mapped = rows.map((r) => ({
+                _id: r._id,
+                title: `${r.member ? `${r.member.firstName || ""} ${r.member.lastName || ""}`.trim() : r.attendeeName || "—"} — ${String(r.type || "").replace(/-/g, " ")}`,
+                subtitle: r.referenceId || r.category || "",
+                badge: r.status || "",
+                date: r.appointmentDate || r.createdAt,
+                module: "memberCare",
+              }));
+              results.memberCare = [...(results.memberCare || []), ...mapped];
             }
           })
       );

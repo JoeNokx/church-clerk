@@ -320,7 +320,7 @@ export default function OverviewTab() {
             </div>
             <button
               type="button"
-              onClick={() => toPage("outreach", { defaultTab: "followups" })}
+              onClick={() => toPage("member-care", { defaultTab: "followup" })}
               className="cck-allow-icons inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]"
             >
               View All

@@ -501,7 +501,7 @@ function SupportHelpPage() {
       "Attendance",
       "Organisations",
       "Outreach",
-      "Member Care",
+      "Followup & Care",
       "Announcements",
       "Programs",
       "Tithes",

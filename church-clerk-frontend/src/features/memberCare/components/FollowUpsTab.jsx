@@ -1,18 +1,18 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import PermissionContext from "../../../permissions/permission.store.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getFollowUpsStats, getAllFollowUps, createFollowUp, createMemberFollowUp, createVisitorFollowUp, updateFollowUp, deleteFollowUp,
   getOutreachEvents,
-} from "../../services/outreach.api.js";
-import EntityPicker, { MemberMultiPicker } from "../../../budgeting/components/EntityPicker.jsx";
-import { assigneeNames, assigneeChips } from "../../../../shared/utils/followUps.js";
-import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
-import Pagination from "../../../../shared/components/Pagination/index.jsx";
-import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
-import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
-import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
-import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
-import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
+} from "../../outreach/services/outreach.api.js";
+import EntityPicker, { MemberMultiPicker } from "../../budgeting/components/EntityPicker.jsx";
+import { assigneeNames, assigneeChips } from "../../../shared/utils/followUps.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import VisitForm from "./VisitForm.jsx";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
@@ -37,7 +37,7 @@ function subjectPhone(fu) {
 }
 
 // Register the follow-up's person belongs to — prospect, visitor, or member.
-function SubjectTag({ fu }) {
+export function SubjectTag({ fu }) {
   if (fu?.visitor) {
     return <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Visitor</span>;
   }
@@ -60,7 +60,7 @@ const STATUS_STYLES = {
   "connected-to-church": "bg-emerald-100 text-emerald-700",
 };
 
-function StatusBadge({ status }) {
+export function StatusBadge({ status }) {
   const cls = STATUS_STYLES[status] || "bg-gray-100 text-gray-600";
   const label = status?.replace(/-/g, " ") || "Not Specified";
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${cls}`}>{label}</span>;
@@ -105,13 +105,22 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
         nextFollowUpDate: initialData.nextFollowUpDate ? initialData.nextFollowUpDate.slice(0, 10) : "",
       });
     } else {
-      setForm({ ...empty, ...defaultValues });
+      // member/memberName are picker state, not form fields — keep them
+      // out of the payload.
+      const { member, memberName, ...formDefaults } = defaultValues || {};
+      setForm({ ...empty, ...formDefaults });
       // Pre-selected prospect (from prospect/event pages) — resolve the
       // display name from the passed-in list so the picker shows it.
       if (defaultValues?.prospect) {
         setProspectId(defaultValues.prospect);
         const p = (prospects || []).find((x) => String(x._id) === String(defaultValues.prospect));
         if (p) setProspectName([p.firstName, p.lastName].filter(Boolean).join(" "));
+      }
+      // Pre-selected member (e.g. from a care case's "Follow Up" action).
+      if (member) {
+        setSubjectType("member");
+        setMemberId(member);
+        setMemberName(memberName || "");
       }
     }
     setError("");
@@ -229,6 +238,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
                 <option value="in-person">In-Person</option>
                 <option value="church-visit">Church Visit</option>
                 <option value="personal-meeting">Personal Meeting</option>
+                <option value="care-case">Care Case</option>
               </select>
             </div>
           </div>
@@ -345,9 +355,10 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
 // ── Follow-Up Row ─────────────────────────────────────────────────
 const TYPE_LABELS = {
   call: "Call", whatsapp: "WhatsApp", visit: "Visit", email: "Email", "in-person": "In-Person", text: "SMS", other: "Other",
+  "church-visit": "Church Visit", "personal-meeting": "Personal Meeting", sms: "SMS", "care-case": "Care Case",
 };
 
-function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
+function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, onLogVisit }) {
   const guarded = useGuardedAction();
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
@@ -368,8 +379,9 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },
-          { label: "Edit", onClick: () => guarded(() => onEdit(fu), "outreach", "update") },
-          fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(fu), "outreach", "delete"), danger: true },
+          { label: "Edit", onClick: () => guarded(() => onEdit(fu), "memberCare", "update") },
+          fu.member && { label: "Log Visit", onClick: () => guarded(() => onLogVisit(fu), "memberCare", "create") },
+          fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDelete(fu), "memberCare", "delete"), danger: true },
         ]} />
       </td>
     </tr>
@@ -378,10 +390,7 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
 
 // ── Main Tab ──────────────────────────────────────────────────────
 export default function FollowUpsTab({ setHeaderAction }) {
-  const { can } = useContext(PermissionContext) || {};
   const guarded = useGuardedAction();
-  const canWrite = typeof can === "function" ? can("outreach", "update") : false;
-  const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
 
   const [stats, setStats] = useState(null);
   const [followUps, setFollowUps] = useState([]);
@@ -403,6 +412,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const [formMode, setFormMode] = useState("create");
   const [editingFU, setEditingFU] = useState(null);
   const [detailsFU, setDetailsFU] = useState(null);
+  const [logVisitFU, setLogVisitFU] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -430,7 +440,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
   useEffect(() => {
     if (!setHeaderAction) return;
     setHeaderAction(
-      <button onClick={() => guarded(() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }, "outreach", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }, "memberCare", "create")} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         Schedule
       </button>
@@ -494,7 +504,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
     if (!deleteTarget) return;
     setDeleting(true);
     try { await deleteFollowUp(deleteTarget._id); setDeleteTarget(null); loadStats(); fetchFollowUps(); }
-    catch { } finally { setDeleting(false); }
+    catch { /* toast already shown by caller */ } finally { setDeleting(false); }
   };
 
   const VIEW_TABS = [
@@ -667,7 +677,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
                     onView={(x) => setDetailsFU(x)}
                     onEdit={(x) => guarded(() => { setEditingFU(x); setFormMode("edit"); setFormOpen(true); })}
                     onDelete={(x) => guarded(() => setDeleteTarget(x))}
-                    canWrite={canWrite} canDelete={canDelete}
+                    onLogVisit={(x) => setLogVisitFU(x)}
                   />
                 ))}
               </tbody>
@@ -723,6 +733,14 @@ export default function FollowUpsTab({ setHeaderAction }) {
         open={!!detailsFU}
         followUp={detailsFU}
         onClose={() => setDetailsFU(null)}
+      />
+
+      <VisitForm
+        open={!!logVisitFU}
+        mode="create"
+        defaultMember={logVisitFU?.member?._id ? logVisitFU.member : null}
+        onClose={() => setLogVisitFU(null)}
+        onSuccess={() => setLogVisitFU(null)}
       />
 
       {deleteTarget ? (

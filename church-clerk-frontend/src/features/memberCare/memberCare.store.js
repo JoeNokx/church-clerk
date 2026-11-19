@@ -12,10 +12,6 @@ import {
   createCareVisit as apiCreateCareVisit,
   updateCareVisit as apiUpdateCareVisit,
   deleteCareVisit as apiDeleteCareVisit,
-  getPrayerRequests as apiGetPrayerRequests,
-  createPrayerRequest as apiCreatePrayerRequest,
-  updatePrayerRequest as apiUpdatePrayerRequest,
-  deletePrayerRequest as apiDeletePrayerRequest,
   getMemberCareKPI as apiGetMemberCareKPI,
   searchCareMembers as apiSearchCareMembers
 } from "./services/memberCare.api.js";
@@ -50,37 +46,25 @@ const emptyVisitFilters = {
   dateTo: ""
 };
 
-const emptyPrayerFilters = {
-  page: 1,
-  limit: 20,
-  search: "",
-  status: "",
-  category: ""
-};
-
 export function MemberCareProvider({ children }) {
   const churchStore = useContext(ChurchContext);
   const [activeChurchId, setActiveChurchId] = useState(null);
 
   const [cases, setCases] = useState([]);
   const [visits, setVisits] = useState([]);
-  const [prayerRequests, setPrayerRequests] = useState([]);
 
   const [casePagination, setCasePagination] = useState(emptyPagination);
   const [visitPagination, setVisitPagination] = useState(emptyPagination);
-  const [prayerPagination, setPrayerPagination] = useState(emptyPagination);
 
   const [caseFilters, setCaseFiltersState] = useState(emptyCaseFilters);
   const [visitFilters, setVisitFiltersState] = useState(emptyVisitFilters);
-  const [prayerFilters, setPrayerFiltersState] = useState(emptyPrayerFilters);
   const caseFiltersRef = useRef(emptyCaseFilters);
   const visitFiltersRef = useRef(emptyVisitFilters);
-  const prayerFiltersRef = useRef(emptyPrayerFilters);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const requestIdRef = useRef({ cases: 0, visits: 0, prayer: 0 });
+  const requestIdRef = useRef({ cases: 0, visits: 0 });
 
   useEffect(() => {
     const id = churchStore?.activeChurch?._id || null;
@@ -99,14 +83,6 @@ export function MemberCareProvider({ children }) {
     setVisitFiltersState((prev) => {
       const next = { ...prev, ...(partial || {}) };
       visitFiltersRef.current = next;
-      return next;
-    });
-  }, []);
-
-  const setPrayerFilters = useCallback((partial) => {
-    setPrayerFiltersState((prev) => {
-      const next = { ...prev, ...(partial || {}) };
-      prayerFiltersRef.current = next;
       return next;
     });
   }, []);
@@ -165,32 +141,9 @@ export function MemberCareProvider({ children }) {
     }
   }, []);
 
-  const fetchPrayerRequests = useCallback(async (partial) => {
-    const requestId = (requestIdRef.current.prayer += 1);
-    const nextFilters = { ...prayerFiltersRef.current, ...(partial || {}) };
-    prayerFiltersRef.current = nextFilters;
-    setPrayerFiltersState(nextFilters);
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiGetPrayerRequests(pickParams(nextFilters));
-      const payload = res?.data?.data ?? res?.data;
-      if (requestId !== requestIdRef.current.prayer) return;
-      setPrayerRequests(Array.isArray(payload?.prayerRequests) ? payload.prayerRequests : []);
-      setPrayerPagination(payload?.pagination || emptyPagination);
-    } catch (e) {
-      if (requestId !== requestIdRef.current.prayer) return;
-      setError(e?.response?.data?.message || e?.message || "Failed to fetch prayer requests");
-      setPrayerRequests([]);
-      setPrayerPagination(emptyPagination);
-    } finally {
-      if (requestId === requestIdRef.current.prayer) setLoading(false);
-    }
-  }, []);
-
   const refreshAfterMutation = useCallback(async () => {
-    await Promise.all([fetchCases(), fetchVisits(), fetchPrayerRequests()]);
-  }, [fetchCases, fetchVisits, fetchPrayerRequests]);
+    await Promise.all([fetchCases(), fetchVisits()]);
+  }, [fetchCases, fetchVisits]);
 
   const createCase = useCallback(async (payload) => {
     const res = await apiCreateCareCase(payload);
@@ -239,24 +192,6 @@ export function MemberCareProvider({ children }) {
     return res;
   }, [fetchVisits]);
 
-  const createPrayer = useCallback(async (payload) => {
-    const res = await apiCreatePrayerRequest(payload);
-    await fetchPrayerRequests();
-    return res;
-  }, [fetchPrayerRequests]);
-
-  const updatePrayer = useCallback(async (id, payload) => {
-    const res = await apiUpdatePrayerRequest(id, payload);
-    await fetchPrayerRequests();
-    return res;
-  }, [fetchPrayerRequests]);
-
-  const deletePrayer = useCallback(async (id) => {
-    const res = await apiDeletePrayerRequest(id);
-    await fetchPrayerRequests();
-    return res;
-  }, [fetchPrayerRequests]);
-
   const getKPI = useCallback(async () => {
     return await apiGetMemberCareKPI();
   }, []);
@@ -271,19 +206,14 @@ export function MemberCareProvider({ children }) {
     activeChurchId,
     cases,
     visits,
-    prayerRequests,
     casePagination,
     visitPagination,
-    prayerPagination,
     caseFilters,
     visitFilters,
-    prayerFilters,
     setCaseFilters,
     setVisitFilters,
-    setPrayerFilters,
     fetchCases,
     fetchVisits,
-    fetchPrayerRequests,
     refreshAfterMutation,
     createCase,
     updateCase,
@@ -293,22 +223,18 @@ export function MemberCareProvider({ children }) {
     createVisit,
     updateVisit,
     deleteVisit,
-    createPrayer,
-    updatePrayer,
-    deletePrayer,
     getKPI,
     searchMembers,
     loading,
     error
   }), [
-    activeChurchId, cases, visits, prayerRequests,
-    casePagination, visitPagination, prayerPagination,
-    caseFilters, visitFilters, prayerFilters,
-    setCaseFilters, setVisitFilters, setPrayerFilters,
-    fetchCases, fetchVisits, fetchPrayerRequests, refreshAfterMutation,
+    activeChurchId, cases, visits,
+    casePagination, visitPagination,
+    caseFilters, visitFilters,
+    setCaseFilters, setVisitFilters,
+    fetchCases, fetchVisits, refreshAfterMutation,
     createCase, updateCase, deleteCase, getCase, getCaseVisits,
     createVisit, updateVisit, deleteVisit,
-    createPrayer, updatePrayer, deletePrayer,
     getKPI, searchMembers, loading, error
   ]);
 

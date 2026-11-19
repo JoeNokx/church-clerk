@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberCareContext from "../memberCare.store.js";
@@ -31,47 +31,58 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
   const [assignees, setAssignees] = useState([]);
   const [dateOpened, setDateOpened] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState("");
+  const [addToFollowUp, setAddToFollowUp] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
   const [firstVisitType, setFirstVisitType] = useState("home-visit");
   const [firstVisitDate, setFirstVisitDate] = useState("");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setFormError(null);
-    setIsSubmitting(false);
+  // Reset the form when the modal opens or the editing target changes —
+  // adjusted during render rather than in an effect.
+  const resetKey = open ? `${mode}:${initialData?._id || "new"}` : "closed";
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
+    if (open) {
+      setFormError(null);
+      setIsSubmitting(false);
 
-    if (mode === "edit" && initialData) {
-      setMember(initialData.member || null);
-      setTitle(String(initialData.title || ""));
-      setCategory(String(initialData.category || "other"));
-      setPriority(String(initialData.priority || "normal"));
-      setStatus(String(initialData.status || "open"));
-      setSource(String(initialData.source || "self-reported"));
-      setConfidential(Boolean(initialData.confidential));
-      setDescription(String(initialData.description || ""));
-      setAssignees(Array.isArray(initialData.assignedTo) ? initialData.assignedTo : []);
-      setDateOpened(initialData.dateOpened ? String(initialData.dateOpened).slice(0, 10) : "");
-      setNextFollowUpDate(initialData.nextFollowUpDate ? String(initialData.nextFollowUpDate).slice(0, 10) : "");
-      setFirstVisitType("home-visit");
-      setFirstVisitDate("");
-      return;
+      if (mode === "edit" && initialData) {
+        setMember(initialData.member || null);
+        setTitle(String(initialData.title || ""));
+        setCategory(String(initialData.category || "other"));
+        setPriority(String(initialData.priority || "normal"));
+        setStatus(String(initialData.status || "open"));
+        setSource(String(initialData.source || "self-reported"));
+        setConfidential(Boolean(initialData.confidential));
+        setDescription(String(initialData.description || ""));
+        setAssignees(Array.isArray(initialData.assignedTo) ? initialData.assignedTo : []);
+        setDateOpened(initialData.dateOpened ? String(initialData.dateOpened).slice(0, 10) : "");
+        setNextFollowUpDate(initialData.nextFollowUpDate ? String(initialData.nextFollowUpDate).slice(0, 10) : "");
+        setAddToFollowUp(Boolean(initialData.addToFollowUp));
+        setScheduledDate(initialData.scheduledDate ? String(initialData.scheduledDate).slice(0, 10) : "");
+        setFirstVisitType("home-visit");
+        setFirstVisitDate("");
+      } else {
+        setMember(null);
+        setTitle("");
+        setCategory("other");
+        setPriority("normal");
+        setStatus("open");
+        setSource("self-reported");
+        setConfidential(false);
+        setDescription("");
+        setAssignees([]);
+        setDateOpened(new Date().toISOString().slice(0, 10));
+        setNextFollowUpDate("");
+        setAddToFollowUp(false);
+        setScheduledDate("");
+        setFirstVisitType("home-visit");
+        setFirstVisitDate("");
+      }
     }
-
-    setMember(null);
-    setTitle("");
-    setCategory("other");
-    setPriority("normal");
-    setStatus("open");
-    setSource("self-reported");
-    setConfidential(false);
-    setDescription("");
-    setAssignees([]);
-    setDateOpened(new Date().toISOString().slice(0, 10));
-    setNextFollowUpDate("");
-    setFirstVisitType("home-visit");
-    setFirstVisitDate("");
-  }, [open, mode, initialData]);
+  }
 
   const submit = async (e) => {
     e.preventDefault();
@@ -98,7 +109,9 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
       description: String(description || "").trim(),
       assignedTo: assignees.map((m) => m?._id).filter(Boolean),
       ...(dateOpened ? { dateOpened } : {}),
-      nextFollowUpDate: nextFollowUpDate || null
+      nextFollowUpDate: nextFollowUpDate || null,
+      addToFollowUp,
+      scheduledDate: addToFollowUp ? (scheduledDate || null) : null
     };
 
     try {
@@ -249,7 +262,7 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div className="md:col-span-2">
-              <label className={labelClass}>Description</label>
+              <label className={labelClass}>Notes</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -257,6 +270,27 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
                 className="mt-2 w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px] text-gray-700 lg:text-sm"
                 placeholder="e.g. Recovering from surgery, needs weekly visits"
               />
+            </div>
+
+            <div className="md:col-span-2 rounded-lg border border-gray-200 px-4 py-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addToFollowUp}
+                  onChange={(e) => setAddToFollowUp(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                />
+                <span>
+                  <span className="block font-semibold text-gray-900 text-sm">Add to Follow-Up</span>
+                  <span className="block text-gray-500 text-xs">This case will appear in the Followup list as a Care Case follow-up.</span>
+                </span>
+              </label>
+              {addToFollowUp ? (
+                <div className="mt-3">
+                  <label className={labelClass}>Scheduled Date</label>
+                  <input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className={inputClass} />
+                </div>
+              ) : null}
             </div>
 
             <label className="md:col-span-2 flex items-start gap-3 rounded-lg border border-gray-200 px-4 py-3 cursor-pointer">

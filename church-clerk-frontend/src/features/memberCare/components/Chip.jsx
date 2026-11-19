@@ -9,7 +9,7 @@ const CHIP_STYLES = {
   normal: "border-blue-200 bg-blue-50 text-blue-700",
   high: "border-orange-200 bg-orange-50 text-orange-700",
   urgent: "border-red-200 bg-red-50 text-red-700",
-  // outcomes / prayer status
+  // outcomes / visit status
   improving: "border-green-200 bg-green-50 text-green-700",
   stable: "border-blue-200 bg-blue-50 text-blue-700",
   "needs-attention": "border-amber-200 bg-amber-50 text-amber-700",

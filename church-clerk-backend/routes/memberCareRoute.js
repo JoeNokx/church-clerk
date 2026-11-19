@@ -24,23 +24,27 @@ import {
   getAllCareVisits,
   getVisitsByCase,
   createCareVisit,
+  createCasualCareVisit,
   updateCareVisit,
   deleteCareVisit
 } from "../controller/memberCareController/careVisitController.js";
 
-import {
-  getAllPrayerRequests,
-  createPrayerRequest,
-  updatePrayerRequest,
-  deletePrayerRequest
-} from "../controller/memberCareController/prayerRequestController.js";
-
 import getMemberCareKPI from "../controller/memberCareController/memberCareKPIController.js";
+
+import {
+  getAllPastoralAppointments,
+  getPastoralAppointmentStats,
+  getPastoralAppointmentById,
+  createPastoralAppointment,
+  updatePastoralAppointment,
+  deletePastoralAppointment
+} from "../controller/memberCareController/pastoralAppointmentController.js";
 
 import {
   createCareCaseSchema,
   createCareVisitSchema,
-  createPrayerRequestSchema
+  createCasualVisitSchema,
+  createPastoralAppointmentSchema
 } from "../validators/memberCare.js";
 
 const readRoles = ["superadmin", "supportadmin", "churchclerkadmin"];
@@ -70,13 +74,16 @@ router.delete("/cases/:caseId", ...D, deletionGuard("careCase", "caseId"), delet
 router.get("/cases/:caseId/visits", ...R, getVisitsByCase);
 router.post("/cases/:caseId/visits", ...W, validateRequest(createCareVisitSchema), createCareVisit);
 router.get("/visits", ...R, getAllCareVisits);
+router.post("/visits", ...W, validateRequest(createCasualVisitSchema), createCasualCareVisit);
 router.put("/visits/:visitId", ...U, updateCareVisit);
 router.delete("/visits/:visitId", ...D, deleteCareVisit);
 
-// ── Prayer requests ────────────────────────────────────────────────
-router.get("/prayer-requests", ...R, getAllPrayerRequests);
-router.post("/prayer-requests", ...W, validateRequest(createPrayerRequestSchema), createPrayerRequest);
-router.put("/prayer-requests/:requestId", ...U, updatePrayerRequest);
-router.delete("/prayer-requests/:requestId", ...D, deletePrayerRequest);
+// ── Pastoral appointments (counseling sessions & appointments) ─────
+router.get("/pastoral-appointments/stats", ...R, getPastoralAppointmentStats);
+router.get("/pastoral-appointments", ...R, getAllPastoralAppointments);
+router.post("/pastoral-appointments", ...W, validateRequest(createPastoralAppointmentSchema), createPastoralAppointment);
+router.get("/pastoral-appointments/:appointmentId", ...R, getPastoralAppointmentById);
+router.put("/pastoral-appointments/:appointmentId", ...U, updatePastoralAppointment);
+router.delete("/pastoral-appointments/:appointmentId", ...D, deletePastoralAppointment);
 
 export default router;

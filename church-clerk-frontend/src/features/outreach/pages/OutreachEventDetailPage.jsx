@@ -15,7 +15,7 @@ import {
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
-import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/FollowUpsTab.jsx";
+import { FollowUpFormModal, FollowUpDetailsModal } from "../../memberCare/components/FollowUpsTab.jsx";
 import { assigneeList, assigneeNames } from "../../../shared/utils/followUps.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import ScopedExpensesTab from "../../../shared/components/ScopedExpensesTab/index.jsx";

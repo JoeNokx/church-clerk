@@ -4,7 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { PersonFormModal, ConvertModal } from "../components/tabs/PeopleReachedTab.jsx";
-import { FollowUpFormModal } from "../components/tabs/FollowUpsTab.jsx";
+import { FollowUpFormModal } from "../../memberCare/components/FollowUpsTab.jsx";
 import { assigneeNames } from "../../../shared/utils/followUps.js";
 import {
   getProspectById,
@@ -115,7 +115,6 @@ export default function ProspectDetailsPage() {
   const backParams = useMemo(() => {
     const params = {};
     if (fromTab === "overview") params.defaultTab = "overview";
-    else if (fromTab === "followups") params.defaultTab = "followups";
     else if (fromTab === "outreaches") params.defaultTab = "outreaches";
     else params.defaultTab = "people";
     return params;
@@ -125,6 +124,12 @@ export default function ProspectDetailsPage() {
   const goBack = useCallback(() => {
     if (fromEventId) {
       toPage("outreach-event-details", { id: fromEventId, from: fromTab, tab: fromEventTab });
+      return;
+    }
+    // Follow-ups now live under Followup & Care — send users who arrived from
+    // there back to that page's Followup tab.
+    if (fromTab === "followups") {
+      toPage("member-care", { defaultTab: "followup" });
       return;
     }
     toPage("outreach", backParams);

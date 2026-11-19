@@ -162,7 +162,7 @@ const MODULES = [
   },
   {
     value: "outreach-followup",
-    label: "Outreach & Follow-Up",
+    label: "Outreach",
     description: "Outreach events, prospects, follow-ups, support and expenses.",
     iconBg: "bg-fuchsia-100",
     iconColor: "text-fuchsia-700",

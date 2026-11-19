@@ -19,7 +19,7 @@ const MODULE_META = {
   churchProjects:   { label: "Fundraising",          page: "fundraising",       detailPage: "fundraising-details" },
   offerings:        { label: "Offerings & Funds",    page: "offering-funds",    detailPage: null },
   welfare:          { label: "Welfare",              page: "welfare",           detailPage: null },
-  memberCare:       { label: "Member Care",          page: "member-care",       detailPage: null },
+  memberCare:       { label: "Followup & Care",      page: "member-care",       detailPage: null },
   pledges:          { label: "Fundraising",          page: "fundraising",       detailPage: "pledge-details" },
   businessVentures: { label: "Business Ventures",   page: "business-ventures", detailPage: null },
   expenses:         { label: "General Expenses",     page: "expenses",          detailPage: null },
